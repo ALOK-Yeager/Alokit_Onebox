@@ -43,17 +43,17 @@ graph TD
         F[Elasticsearch]
     end
 
-    A -- 1. Establishes Connection --> B;
-    B -- 2. Opens Mailbox --> A;
-    B -- 3. Initiates Historical Sync --> C;
-    C -- 4. Fetches Last 30 Days of Emails --> A;
-    C -- 5. Parses and Logs Emails --> E;
-    B -- 6. Enters IDLE Mode --> D;
-    D -- 7. Listens for New Mail Events --> A;
-    A -- 8. Pushes New Email Notification --> D;
-    D -- 9. Triggers New Email Fetch --> C;
+    A -- "Establishes Connection" --> B;
+    B -- "Opens Mailbox" --> A;
+    B -- "Initiates Historical Sync" --> C;
+    C -- "Fetches Last 30 Days of Emails" --> A;
+    C -- "Parses and Logs Emails" --> E;
+    B -- "Enters IDLE Mode" --> D;
+    D -- "Listens for New Mail Events" --> A;
+    A -- "Pushes New Email Notification" --> D;
+    D -- "Triggers New Email Fetch" --> C;
 
-    C -- "Indexes Email (FR-2)" -.-> F
+    C -- "Indexes Email (FR-2)" -.-> F;
 ```
 
 ---
