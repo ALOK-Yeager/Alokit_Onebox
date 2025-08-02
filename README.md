@@ -53,7 +53,7 @@ graph TD
     A -- "Pushes New Email Notification" --> D;
     D -- "Triggers New Email Fetch" --> C;
 
-    C -- "Indexes Email (FR-2)" -.-> F;
+    
 ```
 
 ---
