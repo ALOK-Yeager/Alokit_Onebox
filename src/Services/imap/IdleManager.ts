@@ -2,7 +2,7 @@ const Imap = require('imap');
 const { logger } = require('../utils/Logger');
 import type { AccountConfig } from './AccountConfig';
 
-class IdleManager {
+export class IdleManager {
     private isIdling = false;
     private noopTimer: NodeJS.Timeout | null = null;
     private serverType: 'gmail' | 'outlook' | 'other' = 'other';
@@ -100,4 +100,5 @@ class IdleManager {
     }
 
 }
+// For CommonJS compatibility
 module.exports = { IdleManager };

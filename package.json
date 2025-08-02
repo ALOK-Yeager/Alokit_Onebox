@@ -7,7 +7,10 @@
     "start": "ts-node src/main.ts",
     "dev": "nodemon --exec ts-node src/main.ts",
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:elasticsearch": "ts-node test-elasticsearch-full.ts",
+    "test:api": "ts-node test-api.ts",
+    "check-setup": "node check-setup.js"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +18,7 @@
   "type": "commonjs",
   "devDependencies": {
     "@types/dotenv": "^6.1.1",
+    "@types/express": "^5.0.3",
     "@types/imap": "^0.8.42",
     "@types/mailparser": "^3.4.6",
     "@types/node": "^24.1.0",

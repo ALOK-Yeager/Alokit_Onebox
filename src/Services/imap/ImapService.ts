@@ -1,26 +1,28 @@
-const Imap = require('imap');
-const { EventEmitter } = require('events');
-const { logger } = require('../utils/Logger');
-const { AccountConfig } = require('./AccountConfig');
-const { Email } = require('./Email');
-const { IdleManager } = require('./IdleManager');
-const { ReconnectionManager } = require('./ReconnectionManager');
-const { SyncManager } = require('./SyncManager');
-const { EmailParser } = require('./EmailParser');
+import Imap from 'imap';
+import { EventEmitter } from 'events';
+import { logger } from '../utils/Logger';
+import { AccountConfig } from './AccountConfig';
+import { Email } from './Email';
+import { IdleManager } from './IdleManager';
+import { ReconnectionManager } from './ReconnectionManager';
+import { SyncManager } from './SyncManager';
+import { EmailParser } from './EmailParser';
 
-class ImapService {
-    private imap: any | null = null;
-    private idleManager: any | null = null;
-    private reconnectionManager: any | null = null;
-    private syncManager: any | null = null;
-    private emailParser: any;
+export class ImapService {
+    private imap: Imap | null = null;
+    private idleManager: IdleManager | null = null;
+    private reconnectionManager: ReconnectionManager | null = null;
+    private syncManager: SyncManager | null = null;
+    private emailParser: EmailParser;
     private isInitialized = false;
     private eventEmitter = new EventEmitter();
     private cleanupCallbacks: Array<() => void> = [];
+    private serverType: 'gmail' | 'outlook' | 'other' = 'other';
+    private noopInterval: number = 30 * 60 * 1000; // Default 30 minutes
 
     constructor(
-        private accountConfig: any,
-        private onEmailReceived: (email: any) => void,
+        private accountConfig: AccountConfig,
+        private onEmailReceived: (email: Email) => void,
         private onEmailIndexed: (emailId: string) => void
     ) {
         this.emailParser = new EmailParser();
@@ -91,21 +93,36 @@ class ImapService {
 
         this.imap.once('ready', () => {
             logger.info(`IMAP connection ready for ${this.accountConfig.email}`);
-            this.imap.openBox('INBOX', false, async (err: Error, box: any) => {
+
+            // Detect server type for proper NOOP intervals
+            this.detectServerType();
+
+            // Ensure IMAP connection exists before opening mailbox
+            if (!this.imap) {
+                logger.error(`IMAP connection is null for ${this.accountConfig.email}`);
+                this.handleConnectionFailure();
+                return;
+            }
+
+            this.imap.openBox('INBOX', false, (err: Error, box: any) => {
                 if (err) {
                     logger.error(`Error opening INBOX for ${this.accountConfig.email}:`, err);
                     this.handleConnectionFailure();
                     return;
                 }
                 logger.info(`INBOX opened for ${this.accountConfig.email}`);
-                try {
-                    await this.syncManager?.fetchHistoricalEmails();
-                    this.idleManager?.start();
-                    this.eventEmitter.emit('ready');
-                } catch (err) {
-                    logger.error(`Error during IMAP ready state for ${this.accountConfig.email}:`, err);
-                    this.handleConnectionFailure();
-                }
+
+                // Schedule historical sync after a brief delay to avoid overwhelming connection
+                setTimeout(async () => {
+                    try {
+                        await this.syncManager?.fetchHistoricalEmails();
+                        this.idleManager?.start();
+                        this.eventEmitter.emit('ready');
+                    } catch (err) {
+                        logger.error(`Error during IMAP ready state for ${this.accountConfig.email}:`, err);
+                        this.handleConnectionFailure();
+                    }
+                }, 2000);
             });
         });
 
@@ -113,6 +130,25 @@ class ImapService {
             logger.error(`IMAP error for ${this.accountConfig.email}:`, err);
             this.handleConnectionFailure();
         });
+    }
+
+    private detectServerType(): void {
+        // Use type assertion to access serverName
+        const serverName = (this.imap as any)?.serverName || '';
+        if (serverName.includes('imap.gmail.com')) {
+            this.serverType = 'gmail';
+            this.noopInterval = 25 * 60 * 1000; // 25 minutes for Gmail
+            logger.info(`Detected Gmail server for ${this.accountConfig.email}`);
+        } else if (serverName.includes('outlook') || serverName.includes('office365')) {
+            this.serverType = 'outlook';
+            this.noopInterval = 15 * 60 * 1000; // 15 minutes for Outlook
+            logger.info(`Detected Outlook server for ${this.accountConfig.email}`);
+        } else {
+            this.serverType = 'other';
+            this.noopInterval = 30 * 60 * 1000; // 30 minutes for other servers
+            logger.info(`Detected generic IMAP server for ${this.accountConfig.email}`);
+        }
+        // Remove setNoopInterval call if not implemented in IdleManager
     }
 
     private async handleNewEmails(numNewMsgs: number): Promise<void> {
@@ -140,6 +176,14 @@ class ImapService {
 
     public isConnected(): boolean {
         return this.isInitialized && !!this.imap && this.imap.state === 'connected';
+    }
+
+    public getServerType(): 'gmail' | 'outlook' | 'other' {
+        return this.serverType;
+    }
+
+    public getNoopInterval(): number {
+        return this.noopInterval;
     }
 
     public async disconnect(): Promise<void> {
@@ -192,5 +236,5 @@ class ImapService {
         });
     }
 }
-
+// For CommonJS compatibility
 module.exports = { ImapService };

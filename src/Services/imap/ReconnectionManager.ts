@@ -1,7 +1,7 @@
 const Imap = require('imap');
 const { logger } = require('../utils/Logger');
 
-class ReconnectionManager {
+export class ReconnectionManager {
     private reconnectAttempts = 0;
     private maxReconnectAttempts = 5;
     private reconnectTimeout: NodeJS.Timeout | null = null;

@@ -2,7 +2,7 @@ const Imap = require('imap');
 const { simpleParser } = require('mailparser');
 const { logger } = require('../utils/Logger');
 
-class EmailParser {
+export class EmailParser {
     public async parseMessage(
         msg: any,
         seqno: number,
@@ -103,5 +103,5 @@ class EmailParser {
         return `email-${accountId}-${uid}-${date.replace(/[^a-zA-Z0-9]/g, '')}`;
     }
 }
-
+// For CommonJS compatibility
 module.exports = { EmailParser };

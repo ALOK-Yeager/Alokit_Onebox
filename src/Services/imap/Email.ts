@@ -1,4 +1,4 @@
-interface Email {
+export interface Email {
     id: string;
     uid: number;
     seqno: number;
@@ -14,17 +14,18 @@ interface Email {
     html?: string;
     attachments: Attachment[];
     headers: any;
+    // AI properties for Elasticsearch
+    aiCategory?: string;
+    aiConfidence?: number;
+    generatedReply?: string;
 }
 
-interface Attachment {
+export interface Attachment {
     filename: string;
     contentType: string;
     size: number;
     content: Buffer;
 }
 
-// Export types for TypeScript
-export type { Email, Attachment };
-
-// For CommonJS runtime
+// For CommonJS runtime (empty, as types are not exported at runtime)
 module.exports = {};

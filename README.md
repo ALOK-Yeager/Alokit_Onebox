@@ -155,6 +155,95 @@ node dist/main.js
 
 ---
 
+## Testing Elasticsearch Integration
+
+### Prerequisites for Elasticsearch Testing
+
+1. **Elasticsearch Server**: Make sure Elasticsearch is running on your system.
+
+```bash
+# Using Docker (recommended)
+docker run -p 9200:9200 -e "discovery.type=single-node" elasticsearch:8.11.0
+
+# Or install locally and start the service
+```
+
+2. **Environment Setup**: Add Elasticsearch configuration to your `.env` file:
+
+```bash
+# Elasticsearch configuration
+ELASTICSEARCH_NODE=http://localhost:9200
+```
+
+### Running Tests
+
+#### 1. Check Setup
+First, verify that all dependencies and Elasticsearch are properly configured:
+
+```bash
+npm run check-setup
+```
+
+This command will:
+- ✅ Verify all required packages are installed
+- 🔌 Test Elasticsearch connection
+- 📝 Provide next steps based on the results
+
+#### 2. Test Elasticsearch Integration
+Run the comprehensive Elasticsearch test suite:
+
+```bash
+npm run test:elasticsearch
+```
+
+This test will:
+- Initialize the Elasticsearch service
+- Create a test email entry
+- Index the email in Elasticsearch
+- Test search functionality with various queries
+- Verify filtered search capabilities
+
+#### 3. Test API Endpoints
+Test the Express.js API routes for email search:
+
+```bash
+npm run test:api
+```
+
+Then open your browser or use curl to test the API:
+
+```bash
+# Test search endpoint
+curl "http://localhost:3001/api/emails/search?q=test&from=0&size=10"
+```
+
+### Expected Results
+
+When tests pass successfully, you should see:
+- ✅ Elasticsearch connection established
+- ✅ Email indexing working
+- ✅ Search queries returning results
+- ✅ API endpoints responding correctly
+
+### Troubleshooting
+
+**Connection Failed**: 
+- Ensure Elasticsearch is running on the specified port
+- Check firewall settings
+- Verify ELASTICSEARCH_NODE environment variable
+
+**No Search Results**:
+- Wait a few seconds for indexing to complete
+- Check if test emails were properly indexed
+- Verify index mapping in Elasticsearch
+
+**API Errors**:
+- Check server logs for detailed error messages
+- Ensure all TypeScript files compile without errors
+- Verify all required dependencies are installed
+
+---
+
 ## FR-2: Searchable Storage with Elasticsearch
 
 *(This section will be updated upon completion of the second functional requirement.)*

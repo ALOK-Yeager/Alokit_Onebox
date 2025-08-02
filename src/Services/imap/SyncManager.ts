@@ -2,7 +2,7 @@ const Imap = require('imap');
 const { logger } = require('../utils/Logger');
 const { EmailParser } = require('./EmailParser');
 
-class SyncManager {
+export class SyncManager {
     private lastUid = 0;
     private readonly BATCH_SIZE = 50;
 
@@ -137,5 +137,5 @@ class SyncManager {
         }
     }
 }
-
+// For CommonJS compatibility
 module.exports = { SyncManager };
