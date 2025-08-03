@@ -155,7 +155,7 @@ node dist/main.js
 
 ---
 
-## Testing Elasticsearch Integration
+## FR-2: Searchable Storage with Elasticsearch
 
 ### Prerequisites for Elasticsearch Testing
 
@@ -244,7 +244,7 @@ When tests pass successfully, you should see:
 
 ---
 
-## FR-2: Searchable Storage with Elasticsearch
+## FR-3: Ai-Based Email Categarization
 
 *(This section will be updated upon completion of the second functional requirement.)*
 
