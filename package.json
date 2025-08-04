@@ -10,7 +10,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "test:elasticsearch": "ts-node test-elasticsearch-full.ts",
     "test:api": "ts-node test-api.ts",
-    "check-setup": "node check-setup.js"
+    "test:ai": "ts-node test-ai-classification.ts",
+    "check-setup": "node check-setup.js",
+    "verify": "node verify-integration.js"
   },
   "keywords": [],
   "author": "",

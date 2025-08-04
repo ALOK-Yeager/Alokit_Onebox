@@ -7,6 +7,7 @@ import { IdleManager } from './IdleManager';
 import { ReconnectionManager } from './ReconnectionManager';
 import { SyncManager } from './SyncManager';
 import { EmailParser } from './EmailParser';
+import { EmailClassificationService } from '../ai/EmailClassificationService';
 
 export class ImapService {
     private imap: Imap | null = null;
@@ -14,6 +15,7 @@ export class ImapService {
     private reconnectionManager: ReconnectionManager | null = null;
     private syncManager: SyncManager | null = null;
     private emailParser: EmailParser;
+    private classificationService: EmailClassificationService;
     private isInitialized = false;
     private eventEmitter = new EventEmitter();
     private cleanupCallbacks: Array<() => void> = [];
@@ -26,7 +28,55 @@ export class ImapService {
         private onEmailIndexed: (emailId: string) => void
     ) {
         this.emailParser = new EmailParser();
+        this.classificationService = new EmailClassificationService();
         this.setupCleanup();
+    }
+
+    /**
+     * Enhanced email processing with AI classification
+     * This method wraps the original onEmailReceived callback to add classification
+     */
+    private async processEmailWithClassification(email: Email): Promise<void> {
+        try {
+            // Create email text for classification (subject + body)
+            const emailText = `${email.subject || ''}\n\n${email.body || ''}`.trim();
+
+            // Only classify if we have meaningful content
+            if (emailText.length > 10 && this.classificationService.isServiceAvailable()) {
+                logger.debug(`Classifying email: ${email.subject}`);
+
+                const classification = await this.classificationService.classifyEmail(emailText);
+
+                // Add classification results to email
+                email.aiCategory = classification.category;
+                email.aiConfidence = classification.confidence ?? 0.0;
+
+                if (classification.error) {
+                    logger.warn(`Classification warning for email ${email.id}: ${classification.error}`);
+                } else {
+                    logger.info(`Email classified as: ${classification.category} (confidence: ${classification.confidence?.toFixed(2) || 'N/A'})`);
+                }
+            } else {
+                // Set default values if classification is not available
+                email.aiCategory = 'Unclassified';
+                email.aiConfidence = 0.0;
+
+                if (!this.classificationService.isServiceAvailable()) {
+                    logger.debug('Classification service unavailable - skipping classification');
+                }
+            }
+
+            // Call the original email received callback
+            this.onEmailReceived(email);
+
+        } catch (error) {
+            logger.error(`Error processing email with classification: ${error}`);
+
+            // Ensure email still gets processed even if classification fails
+            email.aiCategory = 'Unclassified';
+            email.aiConfidence = 0.0;
+            this.onEmailReceived(email);
+        }
     }
 
     public async initialize(): Promise<void> {
@@ -72,7 +122,7 @@ export class ImapService {
                 this.imap,
                 this.accountConfig,
                 this.emailParser,
-                this.onEmailReceived,
+                this.processEmailWithClassification.bind(this),
                 this.onEmailIndexed
             );
 

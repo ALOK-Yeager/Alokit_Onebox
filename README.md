@@ -244,7 +244,132 @@ When tests pass successfully, you should see:
 
 ---
 
-## FR-3: Ai-Based Email Categarization
+## FR-3: AI-Based Email Categorization
 
-*(This section will be updated upon completion of the second functional requirement.)*
+The application includes an AI-powered email classification system using a fine-tuned transformer model that automatically categorizes incoming emails into predefined categories.
 
+### Supported Categories
+
+The AI classifier can identify the following email types:
+- **Interested**: Emails expressing interest in meetings, collaborations, or opportunities
+- **Meeting Booked**: Confirmations and calendar invites for scheduled meetings
+- **Not Interested**: Polite rejections or expressions of disinterest
+- **Spam**: Unsolicited promotional emails and potential scams
+- **Out of Office**: Automated out-of-office replies
+
+### AI Integration Features
+
+✅ **Real-time Classification**: Every incoming email is automatically classified during IMAP sync  
+✅ **Confidence Scoring**: Each classification includes a confidence percentage  
+✅ **Elasticsearch Integration**: Classifications are stored and searchable  
+✅ **Fallback Handling**: Graceful degradation when AI service is unavailable  
+✅ **API Endpoint**: Manual classification via REST API  
+
+### Prerequisites for AI Classification
+
+1. **Python Environment**: Python 3.8+ with required packages
+   ```bash
+   # Install Python dependencies
+   pip install -r python-requirements.txt
+   ```
+
+2. **Model Files**: Your fine-tuned model should be in the `models/email_classifier/` directory
+   ```
+   models/
+   └── email_classifier/
+       ├── config.json
+       ├── pytorch_model.bin
+       ├── tokenizer_config.json
+       ├── tokenizer.json
+       └── vocab.txt
+   ```
+
+### Testing AI Classification
+
+#### 1. Test the AI Service
+Run the comprehensive AI classification test:
+
+```bash
+npm run test:ai
+```
+
+This test will:
+- ✅ Verify the AI service is available
+- 🧪 Test classification with sample emails
+- 📊 Report accuracy and performance
+- 💡 Provide troubleshooting guidance
+
+#### 2. Test via API
+Test the classification endpoint manually:
+
+```bash
+# Classify email text
+curl -X POST http://localhost:3000/api/emails/classify \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Meeting invitation for next week. Are you available Tuesday?"}'
+```
+
+#### 3. Search by Category
+Search emails by AI-assigned categories:
+
+```bash
+# Find all "Interested" emails
+curl "http://localhost:3000/api/emails/search?category=Interested"
+
+# Find all "Meeting Booked" emails
+curl "http://localhost:3000/api/emails/search?category=Meeting%20Booked"
+```
+
+### Integration Workflow
+
+The AI classification is seamlessly integrated into the email processing pipeline:
+
+```mermaid
+graph TD
+    A[New Email Received] --> B[IMAP Service]
+    B --> C[Email Parser]
+    C --> D[AI Classification Service]
+    D --> E[Add Category & Confidence]
+    E --> F[Index in Elasticsearch]
+    F --> G[Available for Search]
+    
+    D --> H{AI Service Available?}
+    H -->|Yes| I[Fine-tuned Model Classification]
+    H -->|No| J[Set as 'Unclassified']
+    I --> E
+    J --> E
+```
+
+### Configuration
+
+The AI service automatically:
+- Checks for Python and required packages on startup
+- Loads your fine-tuned model from the models directory
+- Gracefully handles errors and missing dependencies
+- Provides detailed logging for troubleshooting
+
+### Performance
+
+- **Classification Speed**: ~100-500ms per email (depending on hardware)
+- **Accuracy**: Typically 85-95% with well-trained models
+- **Memory Usage**: ~500MB-2GB (depending on model size)
+- **CPU Usage**: Moderate during classification, idle otherwise
+
+### Troubleshooting
+
+**Service Unavailable**:
+- Ensure Python is installed and in PATH
+- Install dependencies: `pip install -r python-requirements.txt`
+- Verify model files are in `models/email_classifier/`
+
+**Low Accuracy**:
+- Check if the model was trained on similar email types
+- Consider retraining with more diverse data
+- Verify model files are complete and not corrupted
+
+**Performance Issues**:
+- Consider using GPU acceleration if available
+- Reduce model size or use quantization
+- Implement batching for high-volume scenarios
+
+---
