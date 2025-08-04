@@ -355,6 +355,35 @@ The AI service automatically:
 - **Memory Usage**: ~500MB-2GB (depending on model size)
 - **CPU Usage**: Moderate during classification, idle otherwise
 
+### Git LFS Setup
+
+This project uses Git Large File Storage (LFS) for managing the AI model files which can be several hundred megabytes. To work with the repository:
+
+1. **Install Git LFS**:
+   ```bash
+   # Download from https://git-lfs.github.com/ and install, then:
+   git lfs install
+   ```
+
+2. **LFS is already configured** for the following file patterns in `.gitattributes`:
+   ```
+   models/email_classifier/** filter=lfs diff=lfs merge=lfs -text
+   *.onnx filter=lfs diff=lfs merge=lfs -text
+   *.bin filter=lfs diff=lfs merge=lfs -text
+   ```
+
+3. **Clone the repository** with LFS:
+   ```bash
+   git lfs clone https://github.com/ALOK-Yeager/Alokit_Onebox.git
+   ```
+
+4. **Verify LFS files**:
+   ```bash
+   git lfs ls-files
+   ```
+
+Note: The model files are tracked by Git LFS and will be downloaded automatically when you clone or pull the repository.
+
 ### Troubleshooting
 
 **Service Unavailable**:
