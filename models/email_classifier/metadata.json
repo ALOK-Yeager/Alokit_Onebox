@@ -1,0 +1,1 @@
+{"model_type": "bart-zero-shot", "labels": ["Interested", "Meeting Booked", "Not Interested", "Out of Office", "Spam"], "github_repo": "https://github.com/ALOK-Yeager/Alokit_Onebox", "integration_hint": "See services/email_classifier.py in repo"}

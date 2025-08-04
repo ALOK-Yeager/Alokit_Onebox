@@ -1,8 +1,10 @@
 const dotenv = require('dotenv');
 const path = require('path');
+const express = require('express');
 const { verifyImapImplementation } = require('./utils/imapVerification');
 const { logger } = require('./services/utils/logger');
 const { AccountConfig } = require('./services/imap/AccountConfig');
+const emailRoutes = require('./routes/emailRoutes');
 
 // Load environment variables from .env file
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
@@ -45,6 +47,19 @@ async function main() {
     logger.info('Environment loaded successfully');
     logger.info('IMAP Server:', accountConfig.host);
 
+    // Set up Express server for API endpoints
+    const app = express();
+    app.use(express.json({ limit: '50mb' })); // For large email content
+    app.use('/api/emails', emailRoutes);
+
+    // Start API server
+    const PORT = process.env.PORT || 3000;
+    const server = app.listen(PORT, () => {
+        logger.info(`🚀 API server running on port ${PORT}`);
+        logger.info(`📧 Classification endpoint: http://localhost:${PORT}/api/emails/classify`);
+        logger.info(`🔍 Search endpoint: http://localhost:${PORT}/api/emails/search`);
+    });
+
     // Verify IMAP implementation
     try {
         logger.info('\nStarting IMAP verification process...');
@@ -64,6 +79,7 @@ async function main() {
 
         process.on('SIGINT', async () => {
             logger.info('\nShutting down...');
+            server.close();
             await imapService.disconnect();
             process.exit(0);
         });
