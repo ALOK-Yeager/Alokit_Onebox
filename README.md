@@ -1,6 +1,5 @@
 # Alokit_Onebox: Real-Time Email Synchronization Service
 
-**Assignment for: Associate Backend Engineer @ ReachInbox**
 
 ---
 
