@@ -1,10 +1,12 @@
 const dotenv = require('dotenv');
 const path = require('path');
 const express = require('express');
-const { verifyImapImplementation } = require('./utils/imapVerification');
 const { logger } = require('./services/utils/logger');
 const { AccountConfig } = require('./services/imap/AccountConfig');
 const emailRoutes = require('./routes/emailRoutes');
+const { ImapService } = require('./services/imap/ImapService');
+const { DualIndexingAdapter } = require('./services/search/DualIndexingAdapter');
+import { Email } from './Services/imap/Email';
 
 // Load environment variables from .env file
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
@@ -47,6 +49,9 @@ async function main() {
     logger.info('Environment loaded successfully');
     logger.info('IMAP Server:', accountConfig.host);
 
+    // Use DualIndexingAdapter for email indexing
+    const indexingService = new DualIndexingAdapter();
+
     // Set up Express server for API endpoints
     const app = express();
     app.use(express.json({ limit: '50mb' })); // For large email content
@@ -60,23 +65,30 @@ async function main() {
         logger.info(`🔍 Search endpoint: http://localhost:${PORT}/api/emails/search`);
     });
 
-    // Verify IMAP implementation
+    // Define email processing callbacks
+    const onEmailReceived = async (email: Email) => {
+        try {
+            logger.info(`Received email: ${email.subject}`);
+            await indexingService.indexEmail(email);
+        } catch (error) {
+            logger.error(`Failed to index email ${email.id}:`, error);
+        }
+    };
+
+    const onEmailIndexed = (emailId: string) => {
+        logger.info(`Successfully indexed email: ${emailId}`);
+    };
+
+    // Initialize IMAP service
+    const imapService = new ImapService(accountConfig, onEmailReceived, onEmailIndexed);
+
     try {
-        logger.info('\nStarting IMAP verification process...');
-        const imapService = await verifyImapImplementation(accountConfig);
+        logger.info('\nStarting IMAP service...');
+        await imapService.initialize();
+        logger.info('\nIMAP service is running and listening for new emails.');
 
-        logger.info('\nIMAP service is ready for integration with other components');
-        logger.info('Next steps:');
-        logger.info('1. Integrate with Elasticsearch for storage');
-        logger.info('2. Implement AI categorization service');
-        logger.info('3. Build frontend interface');
-
-        // Keep the process running and listening for new emails
+        // Keep the process running
         logger.info('\nPress Ctrl+C to exit');
-
-        // Prevent the process from exiting
-        setInterval(() => { }, 1000 * 60 * 60);
-
         process.on('SIGINT', async () => {
             logger.info('\nShutting down...');
             server.close();
@@ -84,7 +96,7 @@ async function main() {
             process.exit(0);
         });
     } catch (error) {
-        logger.error('IMAP verification failed:', error);
+        logger.error('Failed to start IMAP service:', error);
         process.exit(1);
     }
 }

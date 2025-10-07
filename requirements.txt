@@ -1,0 +1,5 @@
+fastapi<0.100
+pydantic<2
+sentence-transformers
+torch --index-url https://download.pytorch.org/whl/cpu
+uvicorn
