@@ -16,6 +16,8 @@ export class ImapService {
     private syncManager: SyncManager | null = null;
     private emailParser: EmailParser;
     private classificationService: EmailClassificationService;
+    private slackService?: any;  // Will be initialized if SLACK_API_TOKEN exists
+    private webhookService?: any;  // Will be initialized if WEBHOOK_URL exists
     private isInitialized = false;
     private eventEmitter = new EventEmitter();
     private cleanupCallbacks: Array<() => void> = [];
@@ -29,6 +31,17 @@ export class ImapService {
     ) {
         this.emailParser = new EmailParser();
         this.classificationService = new EmailClassificationService();
+
+        // Initialize notification services if configured
+        if (process.env.SLACK_API_TOKEN) {
+            const { SlackService } = require('../notifications/SlackService');
+            this.slackService = new SlackService();
+        }
+        if (process.env.WEBHOOK_URL) {
+            const { WebhookService } = require('../notifications/WebhookService');
+            this.webhookService = new WebhookService();
+        }
+
         this.setupCleanup();
     }
 
@@ -45,6 +58,9 @@ export class ImapService {
             if (emailText.length > 10 && this.classificationService.isServiceAvailable()) {
                 logger.debug(`Classifying email: ${email.subject}`);
 
+                // Track the start time for latency monitoring
+                const startTime = Date.now();
+
                 const classification = await this.classificationService.classifyEmail(emailText);
 
                 // Add classification results to email
@@ -54,7 +70,34 @@ export class ImapService {
                 if (classification.error) {
                     logger.warn(`Classification warning for email ${email.id}: ${classification.error}`);
                 } else {
-                    logger.info(`Email classified as: ${classification.category} (confidence: ${classification.confidence?.toFixed(2) || 'N/A'})`);
+                    const latencyMs = Date.now() - startTime;
+                    logger.info(`Email classified as: ${classification.category} (confidence: ${classification.confidence?.toFixed(2) || 'N/A'}, latency: ${latencyMs}ms)`);
+
+                    // Send notifications for high-confidence "Interested" emails
+                    if (classification.category === 'Interested' && (classification.confidence ?? 0) > 0.7) {
+                        // Prepare notification message
+                        const message = `🎯 High-Intent Lead Detected!\n*Subject:* ${email.subject}\n*From:* ${email.from}\n*Confidence:* ${(classification.confidence! * 100).toFixed(1)}%`;
+
+                        // Send Slack notification if enabled
+                        if (this.slackService?.isEnabled()) {
+                            await this.slackService.sendNotification(message);
+                        }
+
+                        // Trigger webhook if enabled
+                        if (this.webhookService?.isEnabled()) {
+                            await this.webhookService.triggerWebhook({
+                                category: classification.category,
+                                emailId: email.id,
+                                confidence: classification.confidence,
+                                metadata: {
+                                    subject: email.subject,
+                                    from: email.from,
+                                    timestamp: email.date,
+                                    classificationLatencyMs: latencyMs
+                                }
+                            });
+                        }
+                    }
                 }
             } else {
                 // Set default values if classification is not available

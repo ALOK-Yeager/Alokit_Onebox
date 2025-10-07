@@ -11,8 +11,10 @@
     "test:elasticsearch": "ts-node test-elasticsearch-full.ts",
     "test:api": "ts-node test-api.ts",
     "test:ai": "ts-node test-ai-classification.ts",
+    "test:slack": "ts-node test-slack.ts",
     "check-setup": "node check-setup.js",
-    "verify": "node verify-integration.js"
+    "verify": "node verify-integration.js",
+    "ui": "streamlit run streamlit_app.py"
   },
   "keywords": [],
   "author": "",
@@ -32,6 +34,8 @@
   },
   "dependencies": {
     "@elastic/elasticsearch": "^9.1.0",
+    "@slack/web-api": "^7.9.3",
+    "@types/node-fetch": "^2.6.13",
     "@xenova/transformers": "^2.17.2",
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
@@ -39,6 +43,7 @@
     "express": "^5.1.0",
     "imap": "^0.8.17",
     "mailparser": "^3.7.4",
+    "node-fetch": "^3.3.2",
     "winston": "^3.17.0"
   }
 }
