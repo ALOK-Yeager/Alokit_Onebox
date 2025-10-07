@@ -1036,11 +1036,9 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 👨‍💻 Author
 
-**ALOK Kumar**  
-Associate Backend Engineer Assignment @ ReachInbox
+**Alokit Mishra **  
 
 - GitHub: [@ALOK-Yeager](https://github.com/ALOK-Yeager)
-- Repository: [Alokit_Onebox](https://github.com/ALOK-Yeager/Alokit_Onebox)
 
 ---
 
