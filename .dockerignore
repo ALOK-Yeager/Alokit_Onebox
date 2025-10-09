@@ -72,7 +72,6 @@ coverage/
 .eslintrc*
 .prettierrc*
 jest.config.*
-tsconfig.json
 
 # Database files
 *.db
