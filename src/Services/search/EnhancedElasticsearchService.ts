@@ -1,6 +1,6 @@
 import { Email } from '../imap/Email';
 import { ElasticsearchService } from './ElasticsearchService';
-import { logger } from '../utils/Logger';
+import logger from '../utils/Logger';
 
 /**
  * Enhanced ElasticsearchService with rollback capabilities

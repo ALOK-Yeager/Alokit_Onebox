@@ -9,12 +9,29 @@ export class ElasticsearchService {
     private readonly indexName = 'emails';
 
     constructor() {
+        // Resolve Elasticsearch endpoint from env vars with sensible fallbacks
+        const node = process.env.ELASTICSEARCH_NODE
+            || process.env.ELASTICSEARCH_URL
+            || (process.env.ELASTICSEARCH_HOST && process.env.ELASTICSEARCH_PORT
+                ? `https://${process.env.ELASTICSEARCH_HOST}:${process.env.ELASTICSEARCH_PORT}`
+                : 'http://localhost:9200');
+
         const clientOptions: ClientOptions = {
-            node: process.env.ELASTICSEARCH_NODE || 'http://localhost:9200',
+            node,
             tls: {
                 rejectUnauthorized: false
             }
         };
+
+        // Optional basic auth for Elastic Cloud or secured clusters
+        if (process.env.ELASTICSEARCH_USERNAME && process.env.ELASTICSEARCH_PASSWORD) {
+            (clientOptions as any).auth = {
+                username: process.env.ELASTICSEARCH_USERNAME,
+                password: process.env.ELASTICSEARCH_PASSWORD
+            };
+        }
+
+        logger.info(`Elasticsearch client configured`, { node });
 
         this.client = new Client(clientOptions);
         this.initIndex().catch(console.error);

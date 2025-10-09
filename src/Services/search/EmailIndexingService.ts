@@ -1,6 +1,6 @@
 import { Email } from '../imap/Email';
 import { EnhancedElasticsearchService } from './EnhancedElasticsearchService';
-import { logger } from '../utils/Logger';
+import logger from '../utils/Logger';
 
 // Interface for Python VectorDB service
 interface VectorDBService {
