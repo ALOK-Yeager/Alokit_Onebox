@@ -1,7 +1,7 @@
 import { spawn } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
-import { logger } from '../utils/Logger';
+import logger from '../utils/Logger';
 
 export interface ClassificationResult {
     category: string;
@@ -15,11 +15,10 @@ export class EmailClassificationService {
     private isAvailable: boolean = false;
 
     constructor() {
-        // Use absolute path to the Python script
-        const projectRoot = path.resolve(__dirname, '../../../');
-        this.pythonScriptPath = path.join(__dirname, 'email_classifier.py');
+        // Resolve Python script from project root so it works in dev and prod
+        // Note: process.cwd() points to repo root in dev and to /app in Docker
+        this.pythonScriptPath = path.resolve(process.cwd(), 'src/Services/ai/email_classifier.py');
         logger.info(`Python script path: ${this.pythonScriptPath}`);
-        logger.info(`Project root: ${projectRoot}`);
         logger.info(`Current directory: ${__dirname}`);
         this.checkPythonAvailability();
     }
@@ -120,7 +119,9 @@ export class EmailClassificationService {
             logger.debug('Running Python classifier script...');
             logger.debug(`Input text: ${input.length > 100 ? input.slice(0, 100) + '...' : input}`);
 
-            const python = spawn('C:/Python313/python.exe', [this.pythonScriptPath], {
+            // Use cross-platform Python executable (override with PYTHON_BIN if needed)
+            const pythonBin = process.env.PYTHON_BIN || (process.platform === 'win32' ? 'python' : 'python3');
+            const python = spawn(pythonBin, [this.pythonScriptPath], {
                 stdio: ['pipe', 'pipe', 'pipe'],
                 env: {
                     ...process.env,
