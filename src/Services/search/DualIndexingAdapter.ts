@@ -270,5 +270,5 @@ export class DualIndexingAdapter {
     }
 }
 
-// Export for CommonJS compatibility
-module.exports = DualIndexingAdapter;
+// Export for CommonJS compatibility - removed to prevent circular dependency
+// module.exports = DualIndexingAdapter;

@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "ts-node src/main.ts",
-    "dev": "nodemon --exec ts-node src/main.ts",
+    "dev": "concurrently \"nodemon --exec ts-node src/main.ts\" \"cd frontend && npm run dev\"",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
     "test:elasticsearch": "ts-node test-elasticsearch-full.ts",

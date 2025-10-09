@@ -1,0 +1,85 @@
+# Multi-purpose Dockerfile for Onebox Aggregator Python Services
+# Can run api_server.py, vectordb_service.py, or api_gateway_onebox.py
+FROM python:3.9-slim
+
+# Build argument to specify which service to run
+ARG SERVICE_SCRIPT=api_server.py
+ENV SERVICE_SCRIPT=${SERVICE_SCRIPT}
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies for ML libraries and building packages
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install Python dependencies
+COPY python-requirements.txt requirements.txt ./
+
+# Install Python dependencies
+# Use pip cache to speed up builds and handle potential package conflicts
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r python-requirements.txt && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copy all Python source code and necessary files
+COPY *.py ./
+COPY src/ ./src/
+COPY models/ ./models/
+COPY vector_store/ ./vector_store/
+COPY examples/ ./examples/
+
+# Create necessary directories with proper permissions
+RUN mkdir -p /app/logs /app/vector_store /app/secrets && \
+    chmod 755 /app/logs /app/vector_store && \
+    chmod 700 /app/secrets
+
+# Create a non-root user for security
+RUN groupadd -r appuser && useradd -r -g appuser appuser && \
+    chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
+
+# Security: Mount point for encryption key (use Docker secrets in production)
+# Example: docker run -v /path/to/secrets:/app/secrets:ro ...
+VOLUME ["/app/secrets"]
+
+# Expose common ports for the services
+# 3000 for api_server.py, 8001 for vectordb_service.py, 3001 for api_gateway_onebox.py
+EXPOSE 3000 8001 3001
+
+# Health check endpoint (works for all services)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:$PORT/health || exit 1
+
+# Environment variables for Python optimization
+ENV PYTHONPATH=/app \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Set default port based on service
+ENV PORT=3000
+
+# Dynamic CMD that runs the specified service using uvicorn
+# The service script is determined by the SERVICE_SCRIPT build arg
+CMD if [ "$SERVICE_SCRIPT" = "api_server.py" ]; then \
+    export PORT=3000; \
+    uvicorn api_server:app --host 0.0.0.0 --port 3000; \
+    elif [ "$SERVICE_SCRIPT" = "vectordb_service.py" ]; then \
+    export PORT=8001; \
+    uvicorn vectordb_service:app --host 0.0.0.0 --port 8001; \
+    elif [ "$SERVICE_SCRIPT" = "api_gateway_onebox.py" ]; then \
+    export PORT=3001; \
+    uvicorn api_gateway_onebox:app --host 0.0.0.0 --port 3001; \
+    else \
+    echo "Unknown service: $SERVICE_SCRIPT"; \
+    echo "Available services: api_server.py, vectordb_service.py, api_gateway_onebox.py"; \
+    exit 1; \
+    fi

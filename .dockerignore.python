@@ -1,0 +1,100 @@
+# Python Services Docker Ignore
+# Exclude unnecessary files to optimize build context
+
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation and development files
+*.md
+docs/
+*.txt
+!requirements.txt
+!python-requirements.txt
+
+# Node.js files (not needed for Python services)
+node_modules/
+package*.json
+tsconfig.json
+Dockerfile
+.dockerignore
+
+# Test files
+test/
+tests/
+*test*.py
+*_test.py
+
+# Logs (will be created in container)
+logs/
+*.log
+
+# Development scripts
+start-services.*
+verify_*.py
+check-setup.js
+verify-*.js
+
+# Temporary files
+tmp/
+temp/
+.tmp
+
+# Large model files that should be downloaded at runtime
+# (uncomment if models are downloaded rather than copied)
+# models/
+
+# Database files that should be persistent volumes
+# vector_store/
+# *.db
+# *.sqlite*

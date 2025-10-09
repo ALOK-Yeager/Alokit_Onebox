@@ -638,5 +638,5 @@ export class EmailIndexingService {
     }
 }
 
-// Export for CommonJS compatibility
-module.exports = EmailIndexingService;
+// Export for CommonJS compatibility - removed to prevent circular dependency
+// module.exports = EmailIndexingService;

@@ -166,6 +166,7 @@ cp .env.example .env
 # - Elasticsearch URL (optional)
 # - Slack token (optional)
 # - Webhook URL (optional)
+# - Set ENABLE_VECTORDB=false to run in keyword-only mode when vector dependencies are unavailable
 ```
 
 ### Step 3: Run the Application

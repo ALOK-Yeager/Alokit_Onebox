@@ -1,0 +1,102 @@
+[
+  {
+    "id": "demo_001",
+    "from": "project-manager@techcorp.com",
+    "to": "team@techcorp.com",
+    "subject": "Q4 Project Timeline Update - Critical Deadlines",
+    "date": "2024-10-05T14:30:00Z",
+    "body": "Hi team, I wanted to update you on the Q4 project timeline. We've moved the API integration milestone to next week due to dependencies on the authentication service. The database migration is still on track for October 15th. Please review the updated Gantt chart and let me know if you have any concerns about your deliverables.",
+    "aiCategory": "More Information",
+    "body_snippet": "Hi team, I wanted to update you on the Q4 project timeline. We've moved the API integration milestone to next week..."
+  },
+  {
+    "id": "demo_002",
+    "from": "support@stripe.com",
+    "to": "billing@yourcompany.com",
+    "subject": "Stripe Account Verification Required - Action Needed",
+    "date": "2024-10-04T10:15:00Z",
+    "body": "Hello, We need additional verification for your Stripe account (acct_1234567890). To maintain compliance with financial regulations, please upload a government-issued ID and proof of address within 48 hours. Your account will be temporarily restricted until verification is complete.",
+    "aiCategory": "Interested",
+    "body_snippet": "Hello, We need additional verification for your Stripe account. To maintain compliance with financial regulations..."
+  },
+  {
+    "id": "demo_003",
+    "from": "noreply@github.com",
+    "to": "dev@yourcompany.com",
+    "subject": "Security Alert: New SSH Key Added to Your Account",
+    "date": "2024-10-03T16:45:00Z",
+    "body": "A new SSH key was added to your GitHub account @your-username. If this was you, you can safely ignore this email. If you did not add this key, please review your account security settings immediately. Key fingerprint: SHA256:abcd1234efgh5678ijkl9012mnop3456qrst7890",
+    "aiCategory": "Interested",
+    "body_snippet": "A new SSH key was added to your GitHub account. If this was you, you can safely ignore this email..."
+  },
+  {
+    "id": "demo_004",
+    "from": "hr@company.com",
+    "to": "all@company.com",
+    "subject": "Annual Performance Review Process - Schedule Your 1:1",
+    "date": "2024-10-02T09:00:00Z",
+    "body": "Dear Team, It's time for our annual performance review cycle. Please schedule your 1:1 meeting with your manager by October 15th. The review will cover your accomplishments, areas for growth, and goal setting for next year. Don't forget to complete your self-assessment form in the HR portal.",
+    "aiCategory": "More Information",
+    "body_snippet": "Dear Team, It's time for our annual performance review cycle. Please schedule your 1:1 meeting..."
+  },
+  {
+    "id": "demo_005",
+    "from": "marketing@newsletter.com",
+    "to": "subscriber@email.com",
+    "subject": "Weekly Tech Newsletter - AI Breakthroughs This Week",
+    "date": "2024-10-01T12:00:00Z",
+    "body": "This week in tech: OpenAI announces new multimodal capabilities, Google releases updated Gemini models, and Microsoft expands Azure AI services. Also featuring: startup funding roundup, open source project highlights, and upcoming tech conferences.",
+    "aiCategory": "Not Interested",
+    "body_snippet": "This week in tech: OpenAI announces new multimodal capabilities, Google releases updated Gemini models..."
+  },
+  {
+    "id": "demo_006",
+    "from": "ceo@startup.com",
+    "to": "all-hands@startup.com",
+    "subject": "Series A Funding Announcement - We Did It!",
+    "date": "2024-09-30T17:30:00Z",
+    "body": "Team, I'm thrilled to announce that we've successfully closed our Series A funding round at $15M! This investment will allow us to double our engineering team, expand to new markets, and accelerate product development. Celebrating at the office Friday at 5 PM - see you there!",
+    "aiCategory": "Interested",
+    "body_snippet": "Team, I'm thrilled to announce that we've successfully closed our Series A funding round at $15M!"
+  },
+  {
+    "id": "demo_007",
+    "from": "client@bigcorp.com",
+    "to": "sales@yourcompany.com",
+    "subject": "Contract Renewal Discussion - Pricing Questions",
+    "date": "2024-09-29T14:20:00Z",
+    "body": "Hi Sales Team, Our current contract expires in November and we're interested in renewal. However, we'd like to discuss the pricing structure for next year given the expanded scope of work. Can we schedule a call this week to review options?",
+    "aiCategory": "Interested",
+    "body_snippet": "Hi Sales Team, Our current contract expires in November and we're interested in renewal..."
+  },
+  {
+    "id": "demo_008",
+    "from": "security@bank.com",
+    "to": "customer@email.com",
+    "subject": "Suspicious Login Attempt Detected",
+    "date": "2024-09-28T08:45:00Z",
+    "body": "We detected a login attempt to your account from an unrecognized device in a different location. If this was you, please verify by clicking the link below. If not, please change your password immediately and enable two-factor authentication.",
+    "aiCategory": "Interested",
+    "body_snippet": "We detected a login attempt to your account from an unrecognized device in a different location..."
+  },
+  {
+    "id": "demo_009",
+    "from": "devtools@company.com",
+    "to": "engineering@company.com",
+    "subject": "New Development Environment Setup Guide",
+    "date": "2024-09-27T11:15:00Z",
+    "body": "Engineers, we've updated our development environment setup process. The new Docker-based approach reduces onboarding time from 2 days to 2 hours. Please review the updated documentation and migrate your local environment by next Friday.",
+    "aiCategory": "More Information",
+    "body_snippet": "Engineers, we've updated our development environment setup process. The new Docker-based approach..."
+  },
+  {
+    "id": "demo_010",
+    "from": "legal@vendor.com",
+    "to": "procurement@yourcompany.com",
+    "subject": "Updated Terms of Service - Review Required",
+    "date": "2024-09-26T15:00:00Z",
+    "body": "Our Terms of Service have been updated to reflect new data privacy regulations. Please review the changes, particularly sections 4.2 (Data Processing) and 7.1 (Liability). Your continued use of our services constitutes acceptance of these terms.",
+    "aiCategory": "More Information",
+    "body_snippet": "Our Terms of Service have been updated to reflect new data privacy regulations..."
+  }
+]

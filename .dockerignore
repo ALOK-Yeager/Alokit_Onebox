@@ -1,0 +1,92 @@
+# Dependencies
+node_modules
+npm-debug.log*
+
+# Build output
+dist
+*.tsbuildinfo
+
+# Runtime and logs
+*.log
+logs
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Documentation and development files
+README.md
+CHANGELOG.md
+*.md
+docs/
+
+# Python files (not needed for Node.js service)
+*.py
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+*.so
+.venv/
+venv/
+env/
+.env.example
+
+# Other services and configs
+docker-compose.yml
+Dockerfile*
+.dockerignore
+
+# Test files
+test/
+tests/
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+
+# Development tools
+.nyc_output
+coverage/
+.eslintrc*
+.prettierrc*
+jest.config.*
+tsconfig.json
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+vector_store/
+models/
+
+# Temporary files
+tmp/
+temp/
+.tmp
+
+# Cache directories
+.cache
+.npm
+.yarn

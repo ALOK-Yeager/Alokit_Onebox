@@ -1,0 +1,165 @@
+version: "3.8"
+
+services:
+  # Node.js Backend (IMAP Email Processing)
+  node-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: onebox-node-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - VECTORDB_ENDPOINT=http://vectordb:8001
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - elasticsearch
+      - vectordb
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+    networks:
+      - onebox-network
+
+  # VectorDB Service
+  vectordb:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+      args:
+        SERVICE_SCRIPT: vectordb_service.py
+    container_name: onebox-vectordb
+    ports:
+      - "8001:8001"
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - VECTORDB_PATH=/app/vector_store
+      - CUDA_VISIBLE_DEVICES=-1
+      - FORCE_CPU=1
+      - TOKENIZERS_PARALLELISM=false
+    volumes:
+      - ./vector_store:/app/vector_store
+      - ./models:/app/models
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - onebox-network
+
+  # API Server (FastAPI)
+  api-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+      args:
+        SERVICE_SCRIPT: api_server.py
+    container_name: onebox-api-server
+    ports:
+      - "3002:3000" # Changed to avoid conflict with Node backend
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - PORT=3000
+      - VECTORDB_ENDPOINT=http://vectordb:8001
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - ELASTICSEARCH_HOST=elasticsearch
+      - ELASTICSEARCH_PORT=9200
+    volumes:
+      - ./logs:/app/logs
+      - ./vector_store:/app/vector_store
+    depends_on:
+      - vectordb
+      - elasticsearch
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+    networks:
+      - onebox-network
+
+  # API Gateway (Unified Entry Point)
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+      args:
+        SERVICE_SCRIPT: api_gateway_onebox.py
+    container_name: onebox-api-gateway
+    ports:
+      - "3001:3001"
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - API_SERVER_URL=http://api-server:3000
+      - VECTORDB_SERVICE_URL=http://vectordb:8001
+      - NODE_BACKEND_URL=http://node-backend:3000
+      - GATEWAY_PORT=3001
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - api-server
+      - vectordb
+      - node-backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - onebox-network
+
+  # Elasticsearch
+  elasticsearch:
+    image: elasticsearch:8.11.0
+    container_name: onebox-elasticsearch
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test:
+        ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - onebox-network
+
+# Named volumes for persistent data
+volumes:
+  elasticsearch_data:
+    driver: local
+
+# Network for service communication
+networks:
+  onebox-network:
+    driver: bridge

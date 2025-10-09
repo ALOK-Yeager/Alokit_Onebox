@@ -1,0 +1,263 @@
+# ===================================================================
+# ONEBOX AGGREGATOR - RENDER.COM DEPLOYMENT CONFIGURATION
+# ===================================================================
+# This file defines the deployment configuration for Render.com
+# Update the placeholder values with your actual credentials before deploying
+# ===================================================================
+
+services:
+  # Node.js Backend (IMAP Email Processing)
+  - type: pserv
+    name: node-backend
+    env: docker
+    repo: https://github.com/ALOK-Yeager/Alokit_Onebox.git
+    rootDir: .
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheck:
+      path: /health
+      initialDelaySeconds: 20
+      periodSeconds: 30
+      timeoutSeconds: 10
+      failureThreshold: 3
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - fromGroup: onebox-env
+    disk:
+      name: logs
+      mountPath: /app/logs
+      sizeGB: 1
+
+  # VectorDB Service
+  - type: pserv
+    name: vectordb-service
+    env: docker
+    repo: https://github.com/ALOK-Yeager/Alokit_Onebox.git
+    rootDir: .
+    dockerfilePath: ./Dockerfile.python
+    dockerContext: .
+    dockerBuildArgs:
+      SERVICE_SCRIPT: vectordb_service.py
+    healthCheck:
+      path: /health
+      initialDelaySeconds: 30
+      periodSeconds: 30
+      timeoutSeconds: 10
+      failureThreshold: 3
+    envVars:
+      - key: PYTHONPATH
+        value: /app
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: PYTHONDONTWRITEBYTECODE
+        value: "1"
+      - key: VECTORDB_PATH
+        value: /app/vector_store
+      - key: CUDA_VISIBLE_DEVICES
+        value: "-1"
+      - key: FORCE_CPU
+        value: "1"
+      - key: TOKENIZERS_PARALLELISM
+        value: "false"
+      - fromGroup: onebox-env
+    disk:
+      name: vector-store
+      mountPath: /app/vector_store
+      sizeGB: 10
+    disk:
+      name: models
+      mountPath: /app/models
+      sizeGB: 5
+    disk:
+      name: logs
+      mountPath: /app/logs
+      sizeGB: 1
+
+  # API Server (FastAPI)
+  - type: pserv
+    name: api-server
+    env: docker
+    repo: https://github.com/ALOK-Yeager/Alokit_Onebox.git
+    rootDir: .
+    dockerfilePath: ./Dockerfile.python
+    dockerContext: .
+    dockerBuildArgs:
+      SERVICE_SCRIPT: api_server.py
+    healthCheck:
+      path: /health
+      initialDelaySeconds: 20
+      periodSeconds: 30
+      timeoutSeconds: 10
+      failureThreshold: 3
+    envVars:
+      - key: PYTHONPATH
+        value: /app
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: PYTHONDONTWRITEBYTECODE
+        value: "1"
+      - key: PORT
+        value: 3000
+      - fromGroup: onebox-env
+    disk:
+      name: logs
+      mountPath: /app/logs
+      sizeGB: 1
+
+  # API Gateway (Unified Entry Point)
+  - type: pserv
+    name: api-gateway
+    env: docker
+    repo: https://github.com/ALOK-Yeager/Alokit_Onebox.git
+    rootDir: .
+    dockerfilePath: ./Dockerfile.python
+    dockerContext: .
+    dockerBuildArgs:
+      SERVICE_SCRIPT: api_gateway_onebox.py
+    healthCheck:
+      path: /health
+      initialDelaySeconds: 15
+      periodSeconds: 30
+      timeoutSeconds: 10
+      failureThreshold: 3
+    envVars:
+      - key: PYTHONPATH
+        value: /app
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: PYTHONDONTWRITEBYTECODE
+        value: "1"
+      - key: API_SERVER_URL
+        value: http://api-server:3000
+      - key: VECTORDB_SERVICE_URL
+        value: http://vectordb-service:8001
+      - key: NODE_BACKEND_URL
+        value: http://node-backend:3000
+      - key: GATEWAY_PORT
+        value: 3001
+      - fromGroup: onebox-env
+    disk:
+      name: logs
+      mountPath: /app/logs
+      sizeGB: 1
+
+  # React Frontend
+  - type: web
+    name: frontend
+    runtime: static
+    buildCommand: npm install && npm run build
+    publishDir: dist
+    envVars:
+      - fromGroup: onebox-env
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://api-gateway-[YOUR_RENDER_SERVICE_NAME].onrender.com
+      - type: rewrite
+        source: /api/search
+        destination: https://api-gateway-[YOUR_RENDER_SERVICE_NAME].onrender.com/api/search
+      - type: rewrite
+        source: /api/vector-search
+        destination: https://api-gateway-[YOUR_RENDER_SERVICE_NAME].onrender.com/api/vector-search
+      - type: rewrite
+        source: /api/emails/*
+        destination: https://api-gateway-[YOUR_RENDER_SERVICE_NAME].onrender.com/api/emails/*
+      - type: rewrite
+        source: /api/stats
+        destination: https://api-gateway-[YOUR_RENDER_SERVICE_NAME].onrender.com/api/stats
+      - type: rewrite
+        source: /api/vectordb/*
+        destination: https://api-gateway-[YOUR_RENDER_SERVICE_NAME].onrender.com/api/vectordb/*
+
+# ===================================================================
+# ENVIRONMENT VARIABLE GROUPS
+# ===================================================================
+# Shared environment variables across all services
+envVarGroups:
+  - name: onebox-env
+    envVars:
+      # ===================================================================
+      # ELASTICSEARCH CONFIGURATION
+      # ===================================================================
+      # TODO: Replace with your actual Elastic Cloud credentials
+      # Sign up at: https://cloud.elastic.co/
+      - key: ELASTICSEARCH_URL
+        value: https://[YOUR_DEPLOYMENT_NAME].[REGION].gcp.elastic-cloud.com:9243
+      - key: ELASTICSEARCH_HOST
+        value: [YOUR_DEPLOYMENT_NAME].[REGION].gcp.elastic-cloud.com
+      - key: ELASTICSEARCH_PORT
+        value: "9243"
+      - key: ELASTICSEARCH_USERNAME
+        value: elastic
+      - key: ELASTICSEARCH_PASSWORD
+        generateValue: true  # Render will generate this securely
+      
+      # ===================================================================
+      # SERVICE INTERNAL COMMUNICATION
+      # ===================================================================
+      - key: VECTORDB_ENDPOINT
+        value: http://vectordb-service:8001
+      - key: NODE_BACKEND_URL
+        value: http://node-backend:3000
+      - key: API_SERVER_URL
+        value: http://api-server:3000
+      - key: VECTORDB_SERVICE_URL
+        value: http://vectordb-service:8001
+      - key: GATEWAY_PORT
+        value: "3001"
+      
+      # ===================================================================
+      # EMAIL PROVIDER CONFIGURATION (IMAP)
+      # ===================================================================
+      # TODO: Replace with your actual email credentials
+      # For Gmail: Generate App Password at https://myaccount.google.com/apppasswords
+      # For Outlook: Use regular password or app password
+      - key: IMAP_SERVER
+        value: imap.gmail.com  # Change to your provider: outlook.office365.com, imap.yahoo.com, etc.
+      - key: IMAP_PORT
+        value: "993"
+      - key: IMAP_USER
+        value: your.email@gmail.com  # TODO: Replace with your email
+      - key: IMAP_PASSWORD
+        generateValue: true  # TODO: Set this securely in Render dashboard
+      - key: IMAP_TLS
+        value: "true"
+      
+      # ===================================================================
+      # AI SERVICES CONFIGURATION
+      # ===================================================================
+      # TODO: Get API keys from respective providers
+      - key: GROQ_API_KEY
+        generateValue: true  # TODO: Get from https://console.groq.com/
+      - key: OPENAI_API_KEY
+        generateValue: true  # TODO: Get from https://platform.openai.com/
+      
+      # ===================================================================
+      # NOTIFICATION SERVICES
+      # ===================================================================
+      # TODO: Optional - Configure if you want notifications
+      - key: DISCORD_WEBHOOK_URL
+        value: ""  # TODO: Optional - Discord webhook for notifications
+      - key: SLACK_WEBHOOK_URL
+        value: ""  # TODO: Optional - Slack webhook for notifications
+      - key: SLACK_BOT_TOKEN
+        value: ""  # TODO: Optional - Slack bot token
+      - key: SLACK_CHANNEL
+        value: ""  # TODO: Optional - Slack channel name
+      
+      # ===================================================================
+      # APPLICATION SETTINGS
+      # ===================================================================
+      - key: APP_NAME
+        value: "Onebox Email Aggregator"
+      - key: DEBUG
+        value: "false"
+      - key: LOG_LEVEL
+        value: "info"
+      - key: MAX_EMAILS_PER_SYNC
+        value: "100"
+      - key: SYNC_INTERVAL_MINUTES
+        value: "5"

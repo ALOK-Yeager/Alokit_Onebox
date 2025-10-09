@@ -8,9 +8,33 @@ for more comprehensive email search results.
 import os
 import logging
 from typing import List, Tuple, Dict, Any, Optional
-from src.Services.search.VectorDB import VectorDB
 
-# Configure logging
+# Module-level logger (initialized early for conditional imports)
+logger = logging.getLogger(__name__)
+
+
+def _is_truthy(value: str) -> bool:
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+# Determine whether vector search should be enabled via environment flag
+VECTOR_SEARCH_ENABLED = _is_truthy(os.getenv("ENABLE_VECTORDB", "true"))
+
+# Attempt to import VectorDB only when enabled
+VectorDB = None  # type: ignore[assignment]
+if VECTOR_SEARCH_ENABLED:
+    try:
+        from src.Services.search.VectorDB import VectorDB as _VectorDB  # type: ignore
+
+        VectorDB = _VectorDB
+    except Exception as import_exc:  # pragma: no cover - defensive guard
+        logger.warning(
+            "Vector search disabled because VectorDB could not be imported: %s",
+            import_exc,
+        )
+        VECTOR_SEARCH_ENABLED = False
+
+# Configure logging (after conditional import so logger has handlers)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -33,9 +57,27 @@ class HybridSearch:
             vector_weight: Weight for vector/semantic search results (0-1)
             keyword_weight: Weight for keyword/Elasticsearch results (0-1)
         """
-        self.vector_db = VectorDB()
-        self.vector_weight = vector_weight
+        self.vector_enabled = VECTOR_SEARCH_ENABLED and VectorDB is not None
+        self.vector_db: Optional[Any] = None
+        self.vector_weight = vector_weight if self.vector_enabled else 0.0
         self.keyword_weight = keyword_weight
+
+        if self.vector_enabled and VectorDB is not None:
+            try:
+                self.vector_db = VectorDB()
+                logger.info("Vector search enabled via VectorDB")
+            except Exception as exc:
+                logger.warning(
+                    "Disabling vector search because VectorDB initialization failed: %s",
+                    exc,
+                )
+                self.vector_enabled = False
+                self.vector_db = None
+        else:
+            if not VECTOR_SEARCH_ENABLED:
+                logger.info("Vector search disabled via ENABLE_VECTORDB setting")
+            else:
+                logger.warning("Vector search disabled because VectorDB module is unavailable")
         
         # Try to import Elasticsearch (optional)
         self.es = None
@@ -60,11 +102,24 @@ class HybridSearch:
         Returns:
             List of (email_id, score) tuples
         """
+        if not self.vector_enabled or not self.vector_db:
+            logger.debug("Vector search requested but vector functionality is disabled")
+            return []
+
         try:
             results = self.vector_db.search(query, n_results=n_results)
             logger.info(f"VectorDB search returned {len(results)} results")
             # Ensure we return the correct type
-            return [(str(r[0]), float(r[1])) for r in results]
+            formatted: List[Tuple[str, float]] = []
+            for entry in results:
+                email_id = entry.get("id") or entry.get("document")
+                if not email_id:
+                    continue
+                # Chroma reports distance (lower is better). Convert to similarity-style score.
+                distance = entry.get("distance")
+                score = 1.0 - float(distance) if distance is not None else 1.0
+                formatted.append((str(email_id), score))
+            return formatted
         except Exception as e:
             logger.error(f"VectorDB search failed: {e}")
             return []
@@ -119,7 +174,9 @@ class HybridSearch:
             List of email IDs sorted by combined score
         """
         # Get results from both sources
-        vector_results = self.search_vector(query, n_results=n_results * 2)
+        vector_results: List[Tuple[str, float]] = []
+        if self.vector_enabled:
+            vector_results = self.search_vector(query, n_results=n_results * 2)
         keyword_results = self.search_keyword(query, n_results=n_results * 2)
         
         # Combine and weight results
@@ -158,7 +215,9 @@ class HybridSearch:
             List of dictionaries containing email_id and combined_score
         """
         # Get results from both sources
-        vector_results = self.search_vector(query, n_results=n_results * 2)
+        vector_results: List[Tuple[str, float]] = []
+        if self.vector_enabled:
+            vector_results = self.search_vector(query, n_results=n_results * 2)
         keyword_results = self.search_keyword(query, n_results=n_results * 2)
         
         # Combine and weight results
