@@ -130,5 +130,5 @@ export class EnhancedElasticsearchService extends ElasticsearchService {
     }
 }
 
-// Export for CommonJS compatibility
-module.exports = EnhancedElasticsearchService;
+// Export for CommonJS compatibility - removed to prevent circular dependency
+// module.exports = EnhancedElasticsearchService;

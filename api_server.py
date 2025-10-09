@@ -31,9 +31,11 @@ from pydantic import BaseModel
 import uvicorn
 
 # Try to import the search service
+HybridSearchClass = None
 try:
-    from search_service import HybridSearch
+    from search_service import HybridSearch as _HybridSearch
     HYBRID_SEARCH_AVAILABLE = True
+    HybridSearchClass = _HybridSearch
 except ImportError as e:
     print(f"⚠️  Warning: Could not import HybridSearch: {e}")
     print("   Search functionality will be limited.")
@@ -66,10 +68,12 @@ app.add_middleware(
 
 # Initialize services
 hybrid_search = None
-if HYBRID_SEARCH_AVAILABLE:
+if HYBRID_SEARCH_AVAILABLE and HybridSearchClass is not None:
     try:
-        hybrid_search = HybridSearch()
+        hybrid_search = HybridSearchClass()
         logger.info("✅ HybridSearch service initialized successfully")
+        if hasattr(hybrid_search, "vector_enabled") and not hybrid_search.vector_enabled:
+            logger.info("🔕 Vector search disabled (ENABLE_VECTORDB=false or VectorDB unavailable)")
     except Exception as e:
         logger.error(f"❌ Failed to initialize HybridSearch: {e}")
 
@@ -119,7 +123,10 @@ async def health_check():
         "services": {
             "api": True,
             "hybrid_search": hybrid_search is not None,
-            "vector_db": hybrid_search is not None and hasattr(hybrid_search, 'vector_db')
+            "vector_db": bool(
+                hybrid_search is not None
+                and getattr(hybrid_search, "vector_enabled", False)
+            )
         },
         "timestamp": datetime.utcnow().isoformat()
     }
@@ -146,12 +153,13 @@ async def search_emails(
     if not hybrid_search:
         raise HTTPException(
             status_code=503,
-            detail="Search service is not available. Please ensure VectorDB service is running."
+            detail="Search service is not available. Ensure backend dependencies are installed."
         )
     
     start_time = datetime.utcnow()
     
     try:
+        vector_enabled = getattr(hybrid_search, "vector_enabled", True)
         # Perform search based on type
         if type == "hybrid":
             results = hybrid_search.search(q, n_results=n_results)
@@ -160,11 +168,16 @@ async def search_emails(
                 {
                     "id": email_id,
                     "score": 1.0,  # Placeholder score
-                    "match_type": "hybrid"
+                    "match_type": "hybrid" if vector_enabled else "keyword-only"
                 }
                 for email_id in results
             ]
         elif type == "vector":
+            if not vector_enabled:
+                raise HTTPException(
+                    status_code=503,
+                    detail="Vector search is disabled. Set ENABLE_VECTORDB=true and ensure VectorDB dependencies are installed."
+                )
             vector_results = hybrid_search.search_vector(q, n_results=n_results)
             formatted_results = [
                 {
@@ -226,7 +239,6 @@ async def get_email(email_id: str):
     """
     # This would require integration with Elasticsearch or a database
     # For now, return a mock response
-    logger.info(f"Fetching email: {email_id}")
     
     # TODO: Implement actual email retrieval from Elasticsearch
     return {
@@ -270,25 +282,37 @@ async def get_statistics():
     Returns:
     - Service statistics and metrics
     """
+    vector_enabled = bool(hybrid_search and getattr(hybrid_search, "vector_enabled", False))
     stats = {
         "api_version": "1.0.0",
         "uptime": "Active",
         "services": {
-            "hybrid_search": hybrid_search is not None
+            "hybrid_search": hybrid_search is not None,
+            "vector_search": vector_enabled,
         }
     }
     
     # Try to get VectorDB stats if available
-    if hybrid_search and hasattr(hybrid_search.vector_db, 'collection'):
+    vector_db_client = getattr(hybrid_search, "vector_db", None) if vector_enabled else None
+    if vector_db_client:
         try:
-            count = hybrid_search.vector_db.collection.count()
+            collection = getattr(vector_db_client, "collection", None)
+            if collection is not None and hasattr(collection, "count"):
+                count = collection.count()  # type: ignore[call-arg]
+            elif hasattr(vector_db_client, "get_email_count"):
+                count = vector_db_client.get_email_count()
+            else:
+                count = len(vector_db_client) if hasattr(vector_db_client, "__len__") else 0
+
             stats["vector_store"] = {
-                "email_count": count,
+                "email_count": int(count),
                 "status": "active"
             }
         except Exception as e:
             logger.error(f"Error getting VectorDB stats: {e}")
             stats["vector_store"] = {"status": "error", "message": str(e)}
+    else:
+        stats["vector_store"] = {"status": "disabled"}
     
     return stats
 
@@ -307,6 +331,9 @@ if __name__ == "__main__":
         print("   Make sure VectorDB service is running:")
         print("   python vectordb_service.py")
         print()
+    elif hybrid_search and not getattr(hybrid_search, "vector_enabled", False):
+        print("\nℹ️  Vector search disabled. Running keyword-only mode.")
+        print("   To enable, install vector dependencies and set ENABLE_VECTORDB=true.")
     
     print("\n💡 To test the API, try:")
     print('   curl "http://localhost:3000/api/emails/search?q=test&type=hybrid"')

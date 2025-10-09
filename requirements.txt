@@ -3,3 +3,20 @@ pydantic<2
 sentence-transformers
 torch --index-url https://download.pytorch.org/whl/cpu
 uvicorn
+httpx
+
+# Email Integration Security Dependencies
+cryptography==42.0.5
+# Fernet encryption for credentials at rest
+
+# Rate Limiting
+slowapi==0.1.9
+# Rate limiting for API endpoints
+
+# Database ORM
+sqlalchemy==2.0.23
+# Database models and ORM
+
+# Authentication (choose based on your auth system)
+# PyJWT==2.8.0  # If using JWT authentication
+# python-jose[cryptography]==3.3.0  # Alternative JWT library

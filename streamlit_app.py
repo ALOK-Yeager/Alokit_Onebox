@@ -4,6 +4,7 @@ import pandas as pd
 import time
 import os
 from typing import List, Dict, Any, Optional
+from pathlib import Path
 
 # Set environment variables for cleaner output
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -17,16 +18,38 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# DEMO MODE DETECTION
+IS_DEMO = (
+    "STREAMLIT_RUNTIME_RUNNING" in os.environ or  # Running on Streamlit Cloud
+    "STREAMLIT_SERVER_PORT" in os.environ or      # Alternative cloud detection
+    Path("demo_mode").exists() or                 # Manual demo mode file
+    os.getenv("DEMO_MODE", "false").lower() == "true"  # Environment variable
+)
+
 API_BASE_URL = "http://localhost:3000/api/emails"
 EMAIL_CATEGORIES = ["Interested", "Not Interested", "More Information", "Unclassified"]
 
-# Try to import hybrid search for direct access
-try:
-    from search_service import HybridSearch
-    USE_HYBRID_SEARCH = True
-except ImportError:
-    USE_HYBRID_SEARCH = False
-    st.sidebar.warning("⚠️ Hybrid search not available. Using API only.")
+# Initialize search service based on mode
+if IS_DEMO:
+    try:
+        from demo_search import DemoSearchService
+        demo_search_service = DemoSearchService()
+        USE_DEMO_SEARCH = True
+        USE_HYBRID_SEARCH = False
+    except ImportError as e:
+        st.error(f"Demo search service not available: {e}")
+        USE_DEMO_SEARCH = False
+        USE_HYBRID_SEARCH = False
+else:
+    # Try to import hybrid search for direct access
+    try:
+        from search_service import HybridSearch
+        USE_HYBRID_SEARCH = True
+        USE_DEMO_SEARCH = False
+    except ImportError:
+        USE_HYBRID_SEARCH = False
+        USE_DEMO_SEARCH = False
+        st.sidebar.warning("⚠️ Hybrid search not available. Using API only.")
 
 # --- Styling ---
 st.markdown("""
@@ -76,8 +99,11 @@ st.markdown("""
 # --- API Functions ---
 def get_email_by_id(email_id: str) -> Optional[Dict[str, Any]]:
     """
-    Fetch email details from the API by email ID.
+    Fetch email details from the API by email ID or demo service.
     """
+    if IS_DEMO and USE_DEMO_SEARCH:
+        return demo_search_service.get_email_by_id(email_id)
+    
     try:
         response = requests.get(f"{API_BASE_URL}/{email_id}", timeout=10)
         response.raise_for_status()
@@ -92,10 +118,23 @@ def perform_hybrid_search_direct(query: str, n_results: int = 5) -> List[str]:
     """
     if USE_HYBRID_SEARCH:
         try:
+            from search_service import HybridSearch
             searcher = HybridSearch()
             return searcher.search(query, n_results=n_results)
         except Exception as e:
             st.error(f"Hybrid search error: {e}")
+            return []
+    return []
+
+def perform_demo_search(query: str, n_results: int = 5) -> List[Dict[str, Any]]:
+    """
+    Perform search using the demo search service.
+    """
+    if USE_DEMO_SEARCH:
+        try:
+            return demo_search_service.search(query, n_results=n_results)
+        except Exception as e:
+            st.error(f"Demo search error: {e}")
             return []
     return []
 
@@ -160,46 +199,145 @@ def display_search_result(result: Dict[str, Any]):
 
 # --- Main Application ---
 def main():
+    # Demo mode banner
+    if IS_DEMO:
+        st.markdown("""
+        <div style="background-color: #e6f7ff; padding: 15px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid #1890ff;">
+            <h3 style="color: #0050b3; margin-top: 0;">🎯 DEMO MODE ACTIVE</h3>
+            <p style="margin-bottom: 10px; color: #0050b3;">
+                <strong>This is a fully functional demo</strong> with pre-loaded sample emails. 
+                No email credentials or external services needed!
+            </p>
+            <p style="margin-bottom: 0; color: #0050b3;">
+                ✨ <em>Perfect for showcasing the Onebox Aggregator capabilities</em>
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+    
     st.title("📧 Onebox Aggregator")
-    st.write("🔍 Hybrid search combining keyword and semantic search across your indexed emails.")
+    
+    if IS_DEMO:
+        st.markdown("""
+        ## 🔍 Try These Sample Queries:
+        
+        <div style="background-color: #f6ffed; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+        
+        **🔹 Security & Alerts:**
+        - `"Show me security alerts"`
+        - `"Find suspicious login attempts"`
+        - `"Stripe verification emails"`
+        
+        **🔹 Project Management:**
+        - `"Project timeline updates"`
+        - `"Show deadline-related emails"`
+        - `"Performance review process"`
+        
+        **🔹 Business & Finance:**
+        - `"Funding announcement"`
+        - `"Contract renewal discussions"`
+        - `"Account verification required"`
+        
+        **🔹 Development & Tech:**
+        - `"Development environment setup"`
+        - `"GitHub notifications"`
+        - `"API integration updates"`
+        
+        </div>
+        
+        👉 **Just type any question above and hit Search!**
+        """, unsafe_allow_html=True)
+        
+        st.markdown("---")
+        
+        # Show demo stats
+        if USE_DEMO_SEARCH:
+            try:
+                stats = demo_search_service.get_stats()
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("📧 Total Emails", stats.get("total_emails", 0))
+                with col2:
+                    categories = stats.get("categories", {})
+                    st.metric("📊 Categories", len(categories))
+                with col3:
+                    st.metric("🔍 Search Type", "Demo SQLite")
+            except:
+                pass
+    else:
+        st.write("🔍 Hybrid search combining keyword and semantic search across your indexed emails.")
 
     # --- Search Controls ---
     with st.sidebar:
         st.header("🔍 Search Options")
+        
+        # Determine available search modes
+        available_modes = []
+        if IS_DEMO and USE_DEMO_SEARCH:
+            available_modes = ["Demo Search"]
+            default_mode = "Demo Search"
+        elif USE_HYBRID_SEARCH:
+            available_modes = ["API Search", "Direct Hybrid Search"]
+            default_mode = "API Search"
+        else:
+            available_modes = ["API Search"]
+            default_mode = "API Search"
+        
         search_mode = st.radio(
             "Search Mode",
-            ["API Search", "Direct Hybrid Search"] if USE_HYBRID_SEARCH else ["API Search"],
-            help="API Search uses the backend endpoint. Direct Hybrid Search uses local VectorDB."
+            available_modes,
+            help="Demo Search uses SQLite with sample emails. API Search uses the backend endpoint. Direct Hybrid Search uses local VectorDB."
         )
         
         st.divider()
         
         search_query = st.text_input(
             "Search Query",
-            placeholder="Try: 'Show me emails about project deadlines'"
+            placeholder="Try: 'Show me emails about project deadlines'" if not IS_DEMO else "Try: 'Show me security alerts'"
         )
         
         # Initialize variables
         category_filter = "All"
         n_results = 5
         
-        if search_mode == "API Search":
-            category_filter = st.selectbox("Filter by Category", ["All"] + EMAIL_CATEGORIES)
+        if search_mode in ["API Search", "Demo Search"]:
+            if not IS_DEMO:  # Only show category filter for non-demo mode
+                category_filter = st.selectbox("Filter by Category", ["All"] + EMAIL_CATEGORIES)
         else:
             n_results = st.slider("Number of Results", min_value=1, max_value=20, value=5)
         
         search_button = st.button("🔍 Search", use_container_width=True, type="primary")
         
         st.divider()
-        st.caption("💡 **Tips:**")
-        st.caption("• Use natural language queries")
-        st.caption("• Try specific keywords")
-        st.caption("• Filter by category for better results")
+        
+        if IS_DEMO:
+            st.caption("💡 **Demo Tips:**")
+            st.caption("• Try the suggested queries above")
+            st.caption("• Use natural language")
+            st.caption("• Search works on subject and content")
+            st.caption("• Results are instant!")
+        else:
+            st.caption("💡 **Tips:**")
+            st.caption("• Use natural language queries")
+            st.caption("• Try specific keywords")
+            st.caption("• Filter by category for better results")
 
     # --- Search Results ---
     if search_button and search_query:
         with st.spinner("Searching your emails..."):
-            if search_mode == "Direct Hybrid Search" and USE_HYBRID_SEARCH:
+            if search_mode == "Demo Search" and USE_DEMO_SEARCH:
+                # Use demo search
+                search_results = perform_demo_search(search_query, n_results=10)
+                
+                st.header(f"📬 Search Results for '{search_query}'")
+                
+                if not search_results:
+                    st.info("🔍 No results found. Try a different query or check the suggested queries above.")
+                else:
+                    st.success(f"✅ Found {len(search_results)} results")
+                    for result in search_results:
+                        display_search_result(result)
+                        
+            elif search_mode == "Direct Hybrid Search" and USE_HYBRID_SEARCH:
                 # Use direct hybrid search
                 email_ids = perform_hybrid_search_direct(search_query, n_results=n_results)
                 
@@ -251,7 +389,10 @@ def main():
                         display_search_result(result)
 
     elif not search_query:
-        st.info("👈 Enter a query in the sidebar to begin searching your emails.")
+        if IS_DEMO:
+            st.info("👆 Try one of the suggested queries above to see the demo in action!")
+        else:
+            st.info("👈 Enter a query in the sidebar to begin searching your emails.")
 
 
 if __name__ == "__main__":

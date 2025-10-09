@@ -201,4 +201,6 @@ export class ElasticsearchService {
 }
 
 // Export for CommonJS compatibility
-module.exports = ElasticsearchService;
+// No longer needed with pure ESM
+
+// module.exports = { ElasticsearchService };
