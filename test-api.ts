@@ -1,6 +1,6 @@
 import express from 'express';
 import emailRoutes from './src/routes/emailRoutes';
-import { logger } from './src/Services/utils/Logger';
+import logger from './src/Services/utils/Logger';
 
 const testAPI = async () => {
     const app = express();

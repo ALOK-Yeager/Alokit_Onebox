@@ -2,7 +2,7 @@ import express from 'express';
 import { EmailIndexingService } from '../Services/search/EmailIndexingService';
 import { ElasticsearchService } from '../Services/search/ElasticsearchService';
 import { EmailClassificationService } from '../Services/ai/EmailClassificationService';
-import { logger } from '../Services/utils/Logger';
+import logger from '../Services/utils/Logger';
 
 const router = express.Router();
 

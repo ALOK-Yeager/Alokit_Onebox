@@ -1,6 +1,6 @@
 import { ElasticsearchService } from './src/Services/search/ElasticsearchService';
 import { Email } from './src/Services/imap/Email';
-import { logger } from './src/Services/utils/Logger';
+import logger from './src/Services/utils/Logger';
 
 const testElasticsearch = async () => {
     logger.info('Starting comprehensive Elasticsearch test...');

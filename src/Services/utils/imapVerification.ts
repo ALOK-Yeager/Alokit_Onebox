@@ -1,6 +1,6 @@
 const { ImapService } = require('../imap/ImapService');
 const { AccountConfig } = require('../imap/AccountConfig');
-const { logger } = require('./Logger');
+import logger from './Logger';
 const { Email } = require('../imap/Email');
 
 /** @type {(accountConfig: any) => Promise<any>} */

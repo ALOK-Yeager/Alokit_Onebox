@@ -1,6 +1,6 @@
 import Imap from 'imap';
 import { EventEmitter } from 'events';
-import { logger } from '../utils/Logger';
+import logger from '../utils/Logger';
 import { AccountConfig } from './AccountConfig';
 import { Email } from './Email';
 import { IdleManager } from './IdleManager';

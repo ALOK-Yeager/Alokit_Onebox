@@ -1,7 +1,7 @@
 import express from 'express';
 import { ElasticsearchService } from '../Services/search/ElasticsearchService';
 import { EmailClassificationService } from '../Services/ai/EmailClassificationService';
-import { logger } from '../Services/utils/Logger';
+import logger from '../Services/utils/Logger';
 import { DualIndexingAdapter } from '../Services/search/DualIndexingAdapter';
 
 const router = express.Router();

@@ -36,3 +36,5 @@ if (process.env.NODE_ENV !== 'production') {
     logger.level = 'debug';
 }
 
+export default logger;
+

@@ -1,5 +1,5 @@
 import { EmailClassificationService } from './src/Services/ai/EmailClassificationService';
-import { logger } from './src/Services/utils/Logger';
+import logger from './src/Services/utils/Logger';
 
 const testClassification = async () => {
     logger.info('🧠 Starting AI Classification Integration Test...');

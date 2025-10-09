@@ -1,5 +1,5 @@
 const Imap = require('imap');
-const { logger } = require('../utils/Logger');
+import logger from '../utils/Logger';
 const { EmailParser } = require('./EmailParser');
 
 class Sync {

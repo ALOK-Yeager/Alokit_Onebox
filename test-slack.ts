@@ -1,6 +1,6 @@
 import { WebClient } from '@slack/web-api';
 import dotenv from 'dotenv';
-import { logger } from './src/Services/utils/Logger';
+import logger from './src/Services/utils/Logger';
 
 // Load environment variables
 dotenv.config();
