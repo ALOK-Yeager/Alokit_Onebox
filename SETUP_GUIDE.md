@@ -221,6 +221,56 @@ python search_service.py
 
 ---
 
+## ☁️ Using Elastic Cloud Instead of Local Elasticsearch
+
+Prefer a managed cluster? Elastic Cloud works without code changes.
+
+1. Install the official client (handy for the Python snippets below):
+   ```powershell
+   pip install elasticsearch
+   ```
+2. Connect with the API key from your Elastic dashboard. Example based on the credentials you shared:
+   ```python
+   from elasticsearch import Elasticsearch
+
+   client = Elasticsearch(
+       "https://009e4f399df8495e8d901e235391571e.us-central1.gcp.cloud.es.io:443",
+       api_key="<paste-your-elastic-api-key>"
+   )
+   ```
+3. (Optional) Create mappings or seed documents before wiring the app:
+   ```python
+   index_name = "onebox_elastic"
+   mappings = {
+       "properties": {
+           "vector": {"type": "dense_vector", "dims": 3},
+           "text": {"type": "text"}
+       }
+   }
+   client.indices.put_mapping(index=index_name, body=mappings)
+   ```
+   ```python
+   from elasticsearch import helpers
+
+   docs = [
+       {"vector": [0.5, 0.212, 0.291], "text": "Yellowstone National Park ..."},
+       {"vector": [1.891, 2.821, 7.889], "text": "Yosemite National Park ..."},
+       {"vector": [7.263, 0.142, 9.095], "text": "Rocky Mountain National Park ..."}
+   ]
+   helpers.bulk(client, docs, index=index_name)
+   ```
+4. Update your `.env` (or Render secrets) so every service hits the managed endpoint:
+   ```dotenv
+   ELASTICSEARCH_URL=https://009e4f399df8495e8d901e235391571e.us-central1.gcp.cloud.es.io:443
+   ELASTICSEARCH_INDEX=onebox_elastic
+   ELASTICSEARCH_API_KEY=<paste-your-elastic-api-key>
+   ```
+   Leave `ELASTICSEARCH_USERNAME` / `ELASTICSEARCH_PASSWORD` empty when using the API key.
+
+Restart the backend processes after changing these variables; the dual-indexer and Python hybrid search will automatically pick up the new credentials.
+
+---
+
 ### ⚠️ Troubleshooting Connection Issues
 
 **If Streamlit shows "Connection Refused" error:**

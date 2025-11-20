@@ -15,7 +15,7 @@ export class ImapService {
     private reconnectionManager: ReconnectionManager | null = null;
     private syncManager: SyncManager | null = null;
     private emailParser: EmailParser;
-    private classificationService: EmailClassificationService;
+    private classificationService: EmailClassificationService | null;
     private slackService?: any;  // Will be initialized if SLACK_API_TOKEN exists
     private webhookService?: any;  // Will be initialized if WEBHOOK_URL exists
     private isInitialized = false;
@@ -30,7 +30,14 @@ export class ImapService {
         private onEmailIndexed: (emailId: string) => void
     ) {
         this.emailParser = new EmailParser();
-        this.classificationService = new EmailClassificationService();
+
+        const classifierEnabled = (process.env.ENABLE_CLASSIFIER || 'false').toLowerCase() === 'true';
+        if (classifierEnabled) {
+            this.classificationService = new EmailClassificationService();
+        } else {
+            this.classificationService = null;
+            logger.info('Email classification disabled via ENABLE_CLASSIFIER flag');
+        }
 
         // Initialize notification services if configured
         if (process.env.SLACK_API_TOKEN) {
@@ -55,7 +62,8 @@ export class ImapService {
             const emailText = `${email.subject || ''}\n\n${email.body || ''}`.trim();
 
             // Only classify if we have meaningful content
-            if (emailText.length > 10 && this.classificationService.isServiceAvailable()) {
+            const classifierAvailable = this.classificationService?.isServiceAvailable();
+            if (emailText.length > 10 && classifierAvailable && this.classificationService) {
                 logger.debug(`Classifying email: ${email.subject}`);
 
                 // Track the start time for latency monitoring
@@ -104,7 +112,7 @@ export class ImapService {
                 email.aiCategory = 'Unclassified';
                 email.aiConfidence = 0.0;
 
-                if (!this.classificationService.isServiceAvailable()) {
+                if (!classifierAvailable) {
                     logger.debug('Classification service unavailable - skipping classification');
                 }
             }

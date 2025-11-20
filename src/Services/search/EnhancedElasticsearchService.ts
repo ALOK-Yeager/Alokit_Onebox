@@ -102,6 +102,10 @@ export class EnhancedElasticsearchService extends ElasticsearchService {
     public async backupEmail(emailId: string): Promise<any | null> {
         try {
             const response = await this.getEmailById(emailId);
+            if (!response) {
+                logger.debug(`No existing document to back up for ${emailId}`);
+                return null;
+            }
             return response._source;
         } catch (error) {
             logger.error(`Failed to backup email ${emailId}:`, error);

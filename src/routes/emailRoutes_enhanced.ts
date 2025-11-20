@@ -25,7 +25,12 @@ try {
     searchService = new ElasticsearchService();
 }
 
-const classificationService = new EmailClassificationService();
+const classifierEnabled = (process.env.ENABLE_CLASSIFIER || 'false').toLowerCase() === 'true';
+const classificationService = classifierEnabled ? new EmailClassificationService() : null;
+
+if (!classifierEnabled) {
+    logger.info('Enhanced classification API disabled via ENABLE_CLASSIFIER flag');
+}
 
 // Search emails (unchanged API for backward compatibility)
 router.get('/search', async (req, res) => {
@@ -76,7 +81,15 @@ router.post('/classify', async (req, res) => {
             });
         }
 
-        const result = await classificationService.classifyEmail(text);
+        const activeClassifier = classificationService;
+        if (!classifierEnabled || !activeClassifier) {
+            return res.status(503).json({
+                error: 'Email classification disabled',
+                serviceAvailable: false
+            });
+        }
+
+        const result = await activeClassifier.classifyEmail(text);
 
         res.json({
             text: text.substring(0, 100) + (text.length > 100 ? '...' : ''),
@@ -84,7 +97,7 @@ router.post('/classify', async (req, res) => {
             confidence: result.confidence,
             error: result.error,
             timestamp: new Date().toISOString(),
-            serviceAvailable: classificationService.isServiceAvailable()
+            serviceAvailable: activeClassifier.isServiceAvailable()
         });
 
     } catch (error) {

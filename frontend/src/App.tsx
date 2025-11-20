@@ -3,51 +3,43 @@ import EmailSearchUI from './components/EmailSearchUI';
 import './App.css';
 
 function App() {
-  const [showDemo, setShowDemo] = useState(false);
+  const [showDemo, setShowDemo] = useState(true);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-indigo-600">Alokit_Onebox</h1>
-            </div>
-            <div className="flex items-center">
-              <button
-                onClick={() => setShowDemo(!showDemo)}
-                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-              >
-                {showDemo ? 'Hide Live Demo' : 'Try it Live!'}
-              </button>
-            </div>
-          </div>
-        </div>
+    <div className="app-shell">
+      <nav className="app-nav">
+        <div className="app-nav__brand">Alokit_Onebox</div>
+        <button className="app-nav__toggle" onClick={() => setShowDemo(!showDemo)}>
+          {showDemo ? 'Hide Live Demo' : 'Try it Live'}
+        </button>
       </nav>
 
-      {/* Hero Section */}
-      <header className="bg-white">
-        <div className="max-w-7xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
-            <span className="block">Revolutionize Your Inbox</span>
-            <span className="block text-indigo-600">Alokit_Onebox</span>
-          </h1>
-          <p className="mt-6 max-w-lg mx-auto text-xl text-gray-500 sm:max-w-3xl">
-            The AI-Powered Email Mastery Tool. Seamlessly pulling together all your inboxes into one intuitive platform.
-          </p>
+      <header className="hero">
+        <p className="hero__eyebrow">The AI-powered inbox companion</p>
+        <h1>Revolutionize Your Inbox</h1>
+        <p className="hero__subtitle">
+          One unified workspace for searching, triaging, and understanding every email thread—without jumping between apps.
+        </p>
+        <div className="hero__benefits">
+          <article>
+            <h3>Morning triage</h3>
+            <p>Skim alerts, investor notes, and product feedback in under five minutes.</p>
+          </article>
+          <article>
+            <h3>Prep before meetings</h3>
+            <p>Pull the last 10 touchpoints with a customer without digging through folders.</p>
+          </article>
+          <article>
+            <h3>Never miss intent</h3>
+            <p>Auto-highlight “interested” replies so your team responds before the competition.</p>
+          </article>
         </div>
       </header>
 
-      {/* Interactive Demo Section */}
       {showDemo && (
-        <main className="py-16">
-          <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div className="bg-white shadow-xl rounded-lg overflow-hidden">
-              <EmailSearchUI />
-            </div>
-          </div>
-        </main>
+        <section className="demo">
+          <EmailSearchUI />
+        </section>
       )}
     </div>
   );

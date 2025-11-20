@@ -190,6 +190,10 @@ envVarGroups:
         value: [YOUR_DEPLOYMENT_NAME].[REGION].gcp.elastic-cloud.com
       - key: ELASTICSEARCH_PORT
         value: "9243"
+      - key: ELASTICSEARCH_INDEX
+        value: onebox_elastic
+      - key: ELASTICSEARCH_API_KEY
+        value: ""  # Set securely in the Render dashboard when using Elastic Cloud API keys
       - key: ELASTICSEARCH_USERNAME
         value: elastic
       - key: ELASTICSEARCH_PASSWORD

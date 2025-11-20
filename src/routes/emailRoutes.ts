@@ -6,8 +6,13 @@ import { DualIndexingAdapter } from '../Services/search/DualIndexingAdapter';
 
 const router = express.Router();
 const esService = new ElasticsearchService();
-const classificationService = new EmailClassificationService();
 const dualIndexingAdapter = new DualIndexingAdapter();
+const classifierEnabled = (process.env.ENABLE_CLASSIFIER || 'false').toLowerCase() === 'true';
+const classificationService = classifierEnabled ? new EmailClassificationService() : null;
+
+if (!classifierEnabled) {
+    logger.info('Classification API disabled via ENABLE_CLASSIFIER flag');
+}
 
 // Hybrid Search Endpoint
 router.get('/search', async (req, res) => {
@@ -68,8 +73,10 @@ router.get('/search', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         const resp = await esService.getEmailById(req.params.id);
-        // Fix: Handle potentially undefined _source with proper typing
-        const source = resp._source as Record<string, any> || {};
+        if (!resp) {
+            return res.status(404).json({ error: 'Email not found' });
+        }
+        const source = (resp._source as Record<string, any>) || {};
         res.json({ id: resp._id, ...source });
     } catch (error) {
         logger.error('Get email by ID error:', error);
@@ -94,7 +101,15 @@ router.post('/classify', async (req, res) => {
             });
         }
 
-        const result = await classificationService.classifyEmail(text);
+        const activeClassifier = classificationService;
+        if (!classifierEnabled || !activeClassifier) {
+            return res.status(503).json({
+                error: 'Email classification disabled',
+                serviceAvailable: false
+            });
+        }
+
+        const result = await activeClassifier.classifyEmail(text);
 
         res.json({
             text: text.substring(0, 100) + (text.length > 100 ? '...' : ''), // Preview of classified text
@@ -102,7 +117,7 @@ router.post('/classify', async (req, res) => {
             confidence: result.confidence,
             error: result.error,
             timestamp: new Date().toISOString(),
-            serviceAvailable: classificationService.isServiceAvailable()
+            serviceAvailable: activeClassifier.isServiceAvailable()
         });
 
     } catch (error) {

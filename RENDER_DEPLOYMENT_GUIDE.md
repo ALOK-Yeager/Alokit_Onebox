@@ -61,6 +61,7 @@ destination: https://api-gateway-[YOUR_RENDER_SERVICE_NAME].onrender.com
    - Render will automatically create environment variable groups
    - Set sensitive values manually in the dashboard:
      - `ELASTICSEARCH_PASSWORD`
+      - `ELASTICSEARCH_API_KEY`
      - `IMAP_PASSWORD`
      - `GROQ_API_KEY` (optional)
      - `OPENAI_API_KEY` (optional)
@@ -97,11 +98,15 @@ After deployment, your services will be available at:
 | Variable | Required | Description | Example |
 |----------|----------|-------------|---------|
 | `ELASTICSEARCH_URL` | Yes | Elastic Cloud URL | `https://my-deployment.us-east1.gcp.elastic-cloud.com:9243` |
-| `ELASTICSEARCH_PASSWORD` | Yes | Elastic password | Set in Render dashboard |
+| `ELASTICSEARCH_INDEX` | Yes | Target index name | `onebox_elastic` |
+| `ELASTICSEARCH_API_KEY` | Optional* | Elastic Cloud API key (preferred auth) | Store secure value in Render |
+| `ELASTICSEARCH_PASSWORD` | Optional* | Basic-auth password (self-hosted) | Set in Render dashboard |
 | `IMAP_SERVER` | Yes | Email server | `imap.gmail.com` |
 | `IMAP_USER` | Yes | Your email | `you@gmail.com` |
 | `IMAP_PASSWORD` | Yes | Email password | Set in Render dashboard |
 | `GROQ_API_KEY` | Optional | AI service key | Set in Render dashboard |
+
+\*Use the API key for Elastic Cloud deployments; the password row only applies to clusters that rely on basic authentication.
 
 ## Troubleshooting
 

@@ -6,6 +6,7 @@ declare global {
             IMAP_USER: string;
             IMAP_PASSWORD: string;
             IMAP_TLS: string;
+            ENABLE_CLASSIFIER?: string;
         }
     }
 }

@@ -1,5 +1,9 @@
-const dotenv = require('dotenv');
 const path = require('path');
+const dotenv = require('dotenv');
+
+// Load environment variables from .env file before requiring other modules
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
 const express = require('express');
 const { logger } = require('./Services/utils/Logger');
 const { AccountConfig } = require('./Services/imap/AccountConfig');
@@ -7,9 +11,6 @@ const emailRoutes = require('./routes/emailRoutes');
 const { ImapService } = require('./Services/imap/ImapService');
 const { DualIndexingAdapter } = require('./Services/search/DualIndexingAdapter');
 import { Email } from './Services/imap/Email';
-
-// Load environment variables from .env file
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 // Validate required environment variables
 const requiredEnvVars = [

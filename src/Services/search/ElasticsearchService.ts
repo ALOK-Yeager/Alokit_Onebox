@@ -6,9 +6,11 @@ declare var module: any;
 
 export class ElasticsearchService {
     private client: Client;
-    private readonly indexName = 'emails';
+    private readonly indexName: string;
 
     constructor() {
+        this.indexName = process.env.ELASTICSEARCH_INDEX || 'emails';
+
         // Resolve Elasticsearch endpoint from env vars with sensible fallbacks
         const node = process.env.ELASTICSEARCH_NODE
             || process.env.ELASTICSEARCH_URL
@@ -23,15 +25,18 @@ export class ElasticsearchService {
             }
         };
 
-        // Optional basic auth for Elastic Cloud or secured clusters
-        if (process.env.ELASTICSEARCH_USERNAME && process.env.ELASTICSEARCH_PASSWORD) {
-            (clientOptions as any).auth = {
-                username: process.env.ELASTICSEARCH_USERNAME,
-                password: process.env.ELASTICSEARCH_PASSWORD
-            };
+        const apiKey = process.env.ELASTICSEARCH_API_KEY;
+        const username = process.env.ELASTICSEARCH_USERNAME;
+        const password = process.env.ELASTICSEARCH_PASSWORD;
+
+        // Prefer API key auth for Elastic Cloud
+        if (apiKey) {
+            (clientOptions as any).auth = { apiKey };
+        } else if (username && password) {
+            (clientOptions as any).auth = { username, password };
         }
 
-        logger.info(`Elasticsearch client configured`, { node });
+        logger.info(`Elasticsearch client configured`, { node, index: this.indexName, apiKey: Boolean(apiKey) });
 
         this.client = new Client(clientOptions);
         this.initIndex().catch(console.error);
@@ -191,7 +196,16 @@ export class ElasticsearchService {
     }
 
     public async getEmailById(id: string) {
-        return this.client.get({ index: this.indexName, id });
+        try {
+            return await this.client.get({ index: this.indexName, id });
+        } catch (error) {
+            const status = (error as any)?.meta?.statusCode;
+            if (status === 404) {
+                logger.debug(`Email ${id} not found in index ${this.indexName}`);
+                return null;
+            }
+            throw error;
+        }
     }
 
     // Helper methods for email address parsing

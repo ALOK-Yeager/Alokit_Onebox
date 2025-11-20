@@ -1,1 +1,116 @@
-/* You can add custom styles here if needed */
+:root {
+    color-scheme: light;
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #f4f5fb;
+}
+
+body {
+    margin: 0;
+    background-color: #f4f5fb;
+    min-height: 100vh;
+}
+
+.app-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.app-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 2rem;
+    background: #101828;
+    color: #fff;
+    box-shadow: 0 8px 30px rgba(16, 24, 40, 0.12);
+}
+
+.app-nav__brand {
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.app-nav__toggle {
+    background: #7c5dfa;
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 0.5rem 1.4rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.app-nav__toggle:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(124, 93, 250, 0.3);
+}
+
+.hero {
+    text-align: center;
+    padding: 4rem 1rem 2rem;
+    max-width: 780px;
+    margin: 0 auto;
+}
+
+.hero h1 {
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    margin-bottom: 1rem;
+    color: #0f172a;
+}
+
+.hero__eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: #7c5dfa;
+    font-weight: 600;
+}
+
+.hero__subtitle {
+    color: #475467;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin: 0 auto;
+    max-width: 560px;
+}
+
+.hero__benefits {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.hero__benefits article {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 18px;
+    padding: 1rem;
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+}
+
+.hero__benefits h3 {
+    margin: 0 0 0.4rem;
+    font-size: 1rem;
+    color: #0f172a;
+}
+
+.hero__benefits p {
+    margin: 0;
+    color: #475467;
+    font-size: 0.95rem;
+}
+
+.demo {
+    flex: 1;
+    padding: 0 1rem 3rem;
+}
+
+.demo>* {
+    border-radius: 24px;
+    background: #fff;
+    box-shadow: 0 30px 80px rgba(15, 23, 42, 0.1);
+    overflow: hidden;
+}

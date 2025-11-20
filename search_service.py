@@ -81,11 +81,26 @@ class HybridSearch:
         
         # Try to import Elasticsearch (optional)
         self.es = None
+        self.es_index = os.getenv("ELASTICSEARCH_INDEX", "emails")
         try:
             from elasticsearch import Elasticsearch
             es_url = os.getenv("ELASTICSEARCH_URL", "http://localhost:9200")
-            self.es = Elasticsearch([es_url])
-            logger.info(f"Connected to Elasticsearch at {es_url}")
+            es_kwargs: Dict[str, Any] = {}
+
+            api_key = os.getenv("ELASTICSEARCH_API_KEY")
+            username = os.getenv("ELASTICSEARCH_USERNAME")
+            password = os.getenv("ELASTICSEARCH_PASSWORD")
+
+            if api_key:
+                es_kwargs["api_key"] = api_key
+            elif username and password:
+                es_kwargs["basic_auth"] = (username, password)
+
+            self.es = Elasticsearch(es_url, **es_kwargs)
+            logger.info(
+                "Connected to Elasticsearch",
+                extra={"url": es_url, "index": self.es_index, "apiKey": bool(api_key)},
+            )
         except ImportError:
             logger.warning("Elasticsearch library not installed. Using VectorDB only.")
         except Exception as e:
@@ -124,7 +139,9 @@ class HybridSearch:
             logger.error(f"VectorDB search failed: {e}")
             return []
     
-    def search_keyword(self, query: str, n_results: int = 5, index: str = "emails") -> List[Tuple[str, float]]:
+    def search_keyword(
+        self, query: str, n_results: int = 5, index: Optional[str] = None
+    ) -> List[Tuple[str, float]]:
         """
         Perform keyword search using Elasticsearch.
         
@@ -141,8 +158,9 @@ class HybridSearch:
             return []
         
         try:
+            target_index = index or self.es_index
             es_results = self.es.search(
-                index=index,
+                index=target_index,
                 query={
                     "multi_match": {
                         "query": query,
