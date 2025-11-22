@@ -235,17 +235,9 @@ const EmailSearchUI: React.FC = () => {
                     </div>
 
                     <div className="demo-credentials">
-                        <h4>Demo inbox</h4>
-                        <p>Streamed from Gmail so you can test in minutes.</p>
-                        <div>
-                            <span>Address</span>
-                            <code>oneboxrender@gmail.com</code>
-                        </div>
-                        <div>
-                            <span>App password</span>
-                            <code>rcgdnmxcumwxfrqq</code>
-                        </div>
-                        <p className="helper">Use the Gmail app password field when connecting via IMAP.</p>
+                        <h4>Live Demo</h4>
+                        <p>This demo connects to a real email inbox, automatically syncing and classifying emails.</p>
+                        <p className="helper">Try searching for keywords to see AI-powered classification in action.</p>
                     </div>
                 </aside>
 
