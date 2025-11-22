@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import EmailSearchUI from './components/EmailSearchUI';
+import HowItWorks from './components/HowItWorks';
 import './App.css';
 
 function App() {
@@ -41,6 +42,8 @@ function App() {
           <EmailSearchUI />
         </section>
       )}
+
+      <HowItWorks />
     </div>
   );
 }

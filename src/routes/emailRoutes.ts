@@ -17,7 +17,7 @@ if (!classifierEnabled) {
 // Hybrid Search Endpoint
 router.get('/search', async (req, res) => {
     try {
-        const { q, type = 'hybrid', category } = req.query as Record<string, any>;
+        const { q, type = 'hybrid', category, categories } = req.query as Record<string, any>;
 
         if (!q) {
             return res.status(400).json({ error: 'Search query (q) is required' });
@@ -25,8 +25,16 @@ router.get('/search', async (req, res) => {
 
         let results: any[] = [];
 
+        // Parse categories if provided as comma-separated string
+        let categoryList: string[] = [];
+        if (categories) {
+            categoryList = categories.split(',').map((c: string) => c.trim()).filter((c: string) => c.length > 0);
+        } else if (category) {
+            categoryList = [category];
+        }
+
         if (type === 'keyword' || type === 'hybrid') {
-            const keywordResults = await esService.search(q, undefined, undefined, category);
+            const keywordResults = await esService.search(q, undefined, undefined, undefined, categoryList);
             results.push(...keywordResults.emails.map((email: any) => ({
                 ...email,
                 match_type: 'keyword'
@@ -124,6 +132,53 @@ router.post('/classify', async (req, res) => {
         logger.error('Classification API error:', error);
         res.status(500).json({
             error: 'Classification failed',
+            details: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+});
+
+// Update email classification
+router.patch('/:id/classify', async (req, res) => {
+    try {
+        const emailId = req.params.id;
+        const { category, confidence } = req.body;
+
+        if (!category) {
+            return res.status(400).json({
+                error: 'Missing category field in request body'
+            });
+        }
+
+        // Get the current email
+        const email = await esService.getEmailById(emailId);
+        if (!email) {
+            return res.status(404).json({ error: 'Email not found' });
+        }
+
+        // Update the email with new classification
+        const source = (email._source as Record<string, any>) || {};
+        source.aiCategory = category;
+        source.aiConfidence = confidence || 0;
+
+        // Use the indexEmail method which will update if exists
+        await esService.indexEmail({
+            id: emailId,
+            ...source,
+            date: new Date(source.date)
+        } as any);
+
+        res.json({
+            success: true,
+            emailId,
+            category,
+            confidence,
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        logger.error('Update classification error:', error);
+        res.status(500).json({
+            error: 'Failed to update classification',
             details: error instanceof Error ? error.message : 'Unknown error'
         });
     }

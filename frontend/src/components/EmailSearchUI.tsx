@@ -9,7 +9,7 @@ const buildApiUrl = (path: string) => {
     return API_BASE_URL ? `${API_BASE_URL}${path}` : path;
 };
 
-const DEFAULT_QUERY = 'funding update';
+const DEFAULT_QUERY = '';
 
 const filterDemoEmails = (query: string, filters: string[]): EmailResult[] => {
     const normalizedQuery = query.toLowerCase();
@@ -50,10 +50,10 @@ const EmailSearchUI: React.FC = () => {
     ];
 
     const quickQueries = [
-        { label: 'Funding announcements', value: 'series a funding' },
-        { label: 'Security alerts', value: 'suspicious login' },
-        { label: 'Renewal deals', value: 'contract renewal pricing' },
-        { label: 'Team announcements', value: 'all-hands update' }
+        { label: 'All emails (a)', value: 'a' },
+        { label: 'Email keyword', value: 'email' },
+        { label: 'Message keyword', value: 'message' },
+        { label: 'All content (the)', value: 'the' }
     ];
 
     useEffect(() => {
@@ -75,21 +75,43 @@ const EmailSearchUI: React.FC = () => {
 
             try {
                 const start = performance.now();
-                const response = await fetch(
-                    buildApiUrl(`/api/emails/search?q=${encodeURIComponent(trimmedQuery)}&filters=${selectedFilters.join(',')}`),
-                    { signal: controller.signal }
-                );
+                const url = buildApiUrl(`/api/emails/search?q=${encodeURIComponent(trimmedQuery)}&categories=${selectedFilters.join(',')}`);
+                console.log('Fetching from:', url);
+
+                const response = await fetch(url, { signal: controller.signal });
 
                 if (!response.ok) {
                     throw new Error(`Search failed with status ${response.status}`);
                 }
 
                 const data = await response.json();
-                const normalizedResults = data.results || data.emails || [];
+                console.log('Search response data:', data);
+
+                const rawResults = data.results || data.emails || [];
+                const normalizedResults = rawResults.map((email: any) => {
+                    let sender = 'Unknown';
+                    if (email.from) {
+                        if (typeof email.from === 'string') {
+                            sender = email.from;
+                        } else if (typeof email.from === 'object') {
+                            sender = email.from.name || email.from.address || 'Unknown';
+                        }
+                    }
+
+                    return {
+                        id: email.id,
+                        subject: email.subject || '(No Subject)',
+                        sender: sender,
+                        snippet: email.snippet || (email.body ? email.body.substring(0, 100) + '...' : 'No content'),
+                        category: email.aiCategory || email.category || 'Uncategorized',
+                        timestamp: email.date || email.timestamp || new Date().toISOString()
+                    };
+                });
+
                 setResults(normalizedResults);
                 setLatencyMs(Math.round(performance.now() - start));
                 setLastUpdated(new Date().toISOString());
-            } catch (error) {
+            } catch (error: any) {
                 if (controller.signal.aborted) return;
                 console.error('Error fetching search results:', error);
                 setResults(filterDemoEmails(trimmedQuery, selectedFilters));
@@ -144,7 +166,7 @@ const EmailSearchUI: React.FC = () => {
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder='subject:"funding" AND label:urgent'
+                        placeholder='Search for emails...'
                         aria-label="Search emails"
                     />
                     <span className="email-search__icon" aria-hidden="true">

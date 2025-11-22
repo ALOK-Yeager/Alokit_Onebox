@@ -136,7 +136,8 @@ export class ElasticsearchService {
         query: string,
         accountId?: string,
         folder?: string,
-        category?: string
+        category?: string,
+        categories?: string[]
     ): Promise<{ total: number; emails: any[] }> {
         try {
             const body: any = {
@@ -151,11 +152,46 @@ export class ElasticsearchService {
 
             // Add text search if query provided
             if (query && query.trim() !== '') {
+                // Use a bool query with should clauses to support both exact and partial matching
                 body.query.bool.must.push({
-                    multi_match: {
-                        query,
-                        fields: ['subject^3', 'body', 'from.name'],
-                        type: 'best_fields'
+                    bool: {
+                        should: [
+                            // Exact phrase match (highest priority)
+                            {
+                                multi_match: {
+                                    query,
+                                    fields: ['subject^3', 'body', 'from'],
+                                    type: 'phrase',
+                                    boost: 3
+                                }
+                            },
+                            // Prefix match (for partial words like "goo" matching "google")
+                            {
+                                multi_match: {
+                                    query,
+                                    fields: ['subject^2', 'body', 'from'],
+                                    type: 'phrase_prefix',
+                                    boost: 2
+                                }
+                            },
+                            // Wildcard match (most flexible)
+                            {
+                                query_string: {
+                                    query: `*${query}*`,
+                                    fields: ['subject^1.5', 'body', 'from'],
+                                    boost: 1
+                                }
+                            },
+                            // Standard word match (fallback)
+                            {
+                                multi_match: {
+                                    query,
+                                    fields: ['subject^3', 'body', 'from'],
+                                    type: 'best_fields'
+                                }
+                            }
+                        ],
+                        minimum_should_match: 1
                     }
                 });
             }
@@ -171,6 +207,11 @@ export class ElasticsearchService {
 
             if (category) {
                 body.query.bool.filter.push({ term: { aiCategory: category } });
+            }
+
+            // Support multiple categories
+            if (categories && categories.length > 0) {
+                body.query.bool.filter.push({ terms: { aiCategory: categories } });
             }
 
             const result = await this.client.search({
