@@ -9,10 +9,9 @@
 - ✅ **FR-1**: Real-Time Email Synchronization - **COMPLETE**
 - ✅ **FR-2**: Searchable Storage with Elasticsearch - **COMPLETE**
 - ✅ **FR-3**: AI-Based Email Categorization - **COMPLETE**
-- ✅ **FR-4**: Notification System (Slack & Webhooks) - **COMPLETE**
-- ✅ **FR-5**: Dual-Indexing Service (Elasticsearch + VectorDB) - **COMPLETE**
-- ✅ **FR-6**: Hybrid Search (Semantic + Keyword) - **COMPLETE**
-- ✅ **FR-7**: Streamlit UI for Email Search - **COMPLETE**
+- ✅ **FR-4**: Dual-Indexing Service (Elasticsearch + VectorDB) - **COMPLETE**
+- ✅ **FR-5**:Hybrid Search (Semantic + Keyword) - **COMPLETE**
+- ✅ **FR-6**: Streamlit UI for Email Search - **COMPLETE**
 
 **💻 Development Environment:**
 - **Hardware**: Developed and optimized for **CPU-only systems**
