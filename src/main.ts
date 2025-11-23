@@ -10,7 +10,9 @@ const { AccountConfig } = require('./Services/imap/AccountConfig');
 const emailRoutes = require('./routes/emailRoutes');
 const { ImapService } = require('./Services/imap/ImapService');
 const { DualIndexingAdapter } = require('./Services/search/DualIndexingAdapter');
-import { Email } from './Services/imap/Email';
+
+// Import type for Email
+import type { Email } from './Services/imap/Email';
 
 // Validate required environment variables
 const requiredEnvVars = [
@@ -56,6 +58,17 @@ async function main() {
     // Set up Express server for API endpoints
     const app = express();
     app.use(express.json({ limit: '50mb' })); // For large email content
+
+    // Health check endpoint for Railway/Render deployments
+    app.get('/health', (req: any, res: any) => {
+        res.status(200).json({
+            status: 'healthy',
+            service: 'onebox-backend',
+            timestamp: new Date().toISOString(),
+            uptime: process.uptime()
+        });
+    });
+
     app.use('/api/emails', emailRoutes);
 
     // Start API server
