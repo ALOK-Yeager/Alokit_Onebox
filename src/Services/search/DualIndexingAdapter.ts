@@ -27,9 +27,9 @@ export class DualIndexingAdapter {
         try {
             // Try to initialize dual indexing
             const defaultConfig = {
-                enableVectorDB: process.env.ENABLE_VECTORDB !== 'false',
+                enableVectorDB: process.env.ENABLE_VECTORDB?.toLowerCase() === 'true',
                 enableElasticsearch: true,
-                enableTransactionSafety: process.env.TRANSACTION_SAFETY !== 'false',
+                enableTransactionSafety: process.env.ENABLE_VECTORDB?.toLowerCase() === 'true' && process.env.TRANSACTION_SAFETY !== 'false',
                 batchSize: parseInt(process.env.INDEXING_BATCH_SIZE || '20'),
                 vectorDBEndpoint: process.env.VECTORDB_ENDPOINT || 'http://localhost:8001'
             };
@@ -50,23 +50,26 @@ export class DualIndexingAdapter {
      * Enhanced to use dual indexing if available
      */
     public async indexEmail(email: Email): Promise<void> {
-        if (this.isDualIndexing && this.indexingService) {
-            try {
-                const result = await this.indexingService.indexEmail(email);
-                if (!result.success) {
-                    // Log the enhanced error info but don't throw for compatibility
-                    logger.warn(`Dual indexing partial failure for ${email.id}:`, result.errors);
+        // If VectorDB is disabled, go straight to Elasticsearch-only
+        if (!this.isDualIndexing || !this.indexingService) {
+            return this.fallbackService.indexEmail(email);
+        }
 
-                    // If Elasticsearch succeeded, consider it successful for backward compatibility
-                    if (!result.elasticsearchSuccess) {
-                        throw new Error(`Indexing failed: ${result.errors.join(', ')}`);
-                    }
+        try {
+            const result = await this.indexingService.indexEmail(email);
+            if (!result.success) {
+                // Log the enhanced error info but don't throw for compatibility
+                logger.warn(`Dual indexing partial failure for ${email.id}:`, result.errors);
+
+                // If Elasticsearch succeeded, consider it successful for backward compatibility
+                if (!result.elasticsearchSuccess) {
+                    throw new Error(`Indexing failed: ${result.errors.join(', ')}`);
                 }
-                return; // Success
-            } catch (error) {
-                logger.error('Dual indexing failed, falling back to Elasticsearch:', error);
-                // Fall through to fallback
             }
+            return; // Success
+        } catch (error) {
+            logger.error('Dual indexing failed, falling back to Elasticsearch:', error);
+            // Fall through to fallback
         }
 
         // Fallback to original Elasticsearch-only indexing

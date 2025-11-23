@@ -265,8 +265,8 @@ export class EmailIndexingService {
                 result.vectorDBSuccess = true; // Not enabled or no content, so considered successful
             }
 
-            // Apply transaction safety if enabled
-            if (this.config.enableTransactionSafety) {
+            // Apply transaction safety if enabled AND both services are enabled
+            if (this.config.enableTransactionSafety && this.config.enableVectorDB && this.config.enableElasticsearch) {
                 result.success = result.elasticsearchSuccess && result.vectorDBSuccess;
 
                 // If transaction failed, attempt rollback
@@ -275,7 +275,7 @@ export class EmailIndexingService {
                     result.errors.push('Transaction rolled back due to partial failure');
                 }
             } else {
-                // Without transaction safety, success if at least one indexing succeeded
+                // Without transaction safety OR single service mode, success if at least one indexing succeeded
                 result.success = result.elasticsearchSuccess || result.vectorDBSuccess;
             }
 
