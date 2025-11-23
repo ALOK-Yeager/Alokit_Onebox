@@ -156,38 +156,49 @@ export class ElasticsearchService {
                 body.query.bool.must.push({
                     bool: {
                         should: [
-                            // Exact phrase match (highest priority)
+                            // Exact phrase match on text fields (highest priority)
                             {
                                 multi_match: {
                                     query,
-                                    fields: ['subject^3', 'body', 'from'],
+                                    fields: ['subject^3', 'body^2'],
                                     type: 'phrase',
                                     boost: 3
                                 }
                             },
-                            // Prefix match (for partial words like "goo" matching "google")
+                            // Prefix match on text fields (for partial words like "goo" matching "google")
                             {
                                 multi_match: {
                                     query,
-                                    fields: ['subject^2', 'body', 'from'],
+                                    fields: ['subject^2', 'body'],
                                     type: 'phrase_prefix',
                                     boost: 2
                                 }
                             },
-                            // Wildcard match (most flexible)
-                            {
-                                query_string: {
-                                    query: `*${query}*`,
-                                    fields: ['subject^1.5', 'body', 'from'],
-                                    boost: 1
-                                }
-                            },
-                            // Standard word match (fallback)
+                            // Standard word match on text fields
                             {
                                 multi_match: {
                                     query,
-                                    fields: ['subject^3', 'body', 'from'],
-                                    type: 'best_fields'
+                                    fields: ['subject^3', 'body^2'],
+                                    type: 'best_fields',
+                                    boost: 1.5
+                                }
+                            },
+                            // Wildcard match for email addresses (keyword field)
+                            {
+                                wildcard: {
+                                    from: {
+                                        value: `*${query.toLowerCase()}*`,
+                                        boost: 1
+                                    }
+                                }
+                            },
+                            // Exact match for email addresses
+                            {
+                                term: {
+                                    from: {
+                                        value: query.toLowerCase(),
+                                        boost: 2
+                                    }
                                 }
                             }
                         ],
