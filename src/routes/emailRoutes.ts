@@ -72,8 +72,15 @@ router.get('/search', async (req, res) => {
         });
 
     } catch (error) {
-        logger.error('Hybrid search API error:', error);
-        res.status(500).json({ error: 'Search failed' });
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const errorStack = error instanceof Error ? error.stack : '';
+        logger.error('Hybrid search API error:', { error: errorMessage, stack: errorStack });
+        res.status(500).json({
+            error: 'Search failed',
+            details: errorMessage,
+            type: type || 'hybrid',
+            query: q || ''
+        });
     }
 });
 

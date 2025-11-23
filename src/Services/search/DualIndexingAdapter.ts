@@ -24,12 +24,22 @@ export class DualIndexingAdapter {
         // Always create fallback service for compatibility
         this.fallbackService = new ElasticsearchService();
 
+        // Check if VectorDB is actually enabled
+        const vectorDBEnabled = process.env.ENABLE_VECTORDB?.toLowerCase() === 'true' || config.enableVectorDB === true;
+
+        if (!vectorDBEnabled) {
+            logger.info('DualIndexingAdapter: VectorDB disabled, using Elasticsearch-only mode');
+            this.indexingService = null;
+            this.isDualIndexing = false;
+            return;
+        }
+
         try {
-            // Try to initialize dual indexing
+            // Try to initialize dual indexing only if VectorDB is enabled
             const defaultConfig = {
-                enableVectorDB: process.env.ENABLE_VECTORDB?.toLowerCase() === 'true',
+                enableVectorDB: true,
                 enableElasticsearch: true,
-                enableTransactionSafety: process.env.ENABLE_VECTORDB?.toLowerCase() === 'true' && process.env.TRANSACTION_SAFETY !== 'false',
+                enableTransactionSafety: process.env.TRANSACTION_SAFETY !== 'false',
                 batchSize: parseInt(process.env.INDEXING_BATCH_SIZE || '20'),
                 vectorDBEndpoint: process.env.VECTORDB_ENDPOINT || 'http://localhost:8001'
             };
