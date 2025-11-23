@@ -16,9 +16,9 @@ if (!classifierEnabled) {
 
 // Hybrid Search Endpoint
 router.get('/search', async (req, res) => {
-    try {
-        const { q, type = 'hybrid', category, categories } = req.query as Record<string, any>;
+    const { q, type = 'hybrid', category, categories } = req.query as Record<string, any>;
 
+    try {
         if (!q) {
             return res.status(400).json({ error: 'Search query (q) is required' });
         }
